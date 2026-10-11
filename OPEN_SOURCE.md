@@ -1,6 +1,6 @@
 # 开源依赖
 
-版本和完整性以 package-lock.json 为准。上游运行时槽位由 HanaMesh 客户端的 master 构建提供；npm 依赖与 Core 同线固定版本。
+版本和完整性以 package-lock.json 为准。Q61 复核固定正式 npm 默认线 `@deepseek-ai/dsh@0.2.0-rc.2`，对照上游精确 tag `dsh-v0.2.0-rc.2`（639ed015397290b3745d163aafe02ffee4aa3f84）；五个客户端 peer 保留 `0.2.0-rc.2`。不以 master 或 alpha 版本替代该固定基线。证据边界见 COMPATIBILITY.md。
 
 | 名称 | 版本 | 协议 | 来源 | 用途 |
 | --- | --- | --- | --- | --- |
@@ -20,5 +20,8 @@
 | loose-envify | 1.4.0 | MIT | https://registry.npmjs.org/loose-envify/-/loose-envify-1.4.0.tgz | 构建或间接依赖 |
 | react | 18.3.1 | MIT | https://registry.npmjs.org/react/-/react-18.3.1.tgz | 插件运行时 |
 | typescript | 5.9.3 | Apache-2.0 | https://registry.npmjs.org/typescript/-/typescript-5.9.3.tgz | 构建或间接依赖 |
+| esbuild | 0.28.2 | MIT | https://registry.npmjs.org/esbuild/-/esbuild-0.28.2.tgz | 仅开发构建：客户端闭包工厂，发行包不携带 |
+
+esbuild 的平台可选二进制均为 0.28.2、MIT、来自官方 npm registry，仅开发构建使用。各名称、精确 URL 与完整性见 package-lock.json 的 `@esbuild/*` 项；本机实际安装 `@esbuild/darwin-arm64`。这些平台候选及构建工具均不进入发行文件清单。
 
 Brand.ts 依据旧 HanaMesh fork 的 H 标实现迁出，参考 deepseek-ai/deepseek-harness 的品牌槽位注册写法（MIT）。

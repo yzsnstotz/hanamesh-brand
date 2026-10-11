@@ -17,4 +17,12 @@ PM 已将首页标题替换从本卡移至 `J1S2-DESK-02`，按 D-12 a 在打包
 
 Node 24：`npm ci && npm test`；`npm run check` 做类型检查；`npm pack` 构建仅客户端发行文件。测试覆盖槽位注册与注销、延迟声明及重建、主题层覆盖及移除、字典注册及移除、安装失败回滚和发行入口。测试是组件级模拟宿主验证，不是 HanaMesh.app 的真实 UI 验收。
 
+`npm run build` 同时生成 Node ESM/类型入口 `lib/client/index.js`、`lib/client/index.d.ts`，及 DSH 浏览器闭包工厂 `lib/client.js`。`exports["./client"].default` 供正式 DSH 客户端模块加载器读取，`node` 条件保留组件测试及 Node 消费入口。浏览器工厂按正式上游协议注册到 `window.__ModuleLoader__`，React 由宿主模块表提供。
+
+门禁：`npm run types`、`npm run build`、`npm run test:contract`（自带构建）、`npm run toolchain`、`npm run preflight`、`npm run test:mutation -- --run-dir <本卡运行目录>/evidence`、`npm pack`。Mutation 在指定运行目录中建立并删除隔离源码副本，逐项核验实际行为断言能发现破坏；不改当前源码或删减原断言。
+
+正式包复核见 [COMPATIBILITY.md](COMPATIBILITY.md)。复核脚本 `npm run test:profile -- --consumer <干净消费者>` 只解析本卡隔离的默认 profile，不启动宿主服务；`npm run test:package -- --consumer <干净消费者>` 用无头 Chrome 执行真实上游模块加载器及服务 API，设置存储与槽位声明者为具名隔离夹具。干净消费者须安装 `@deepseek-ai/dsh@0.2.0-rc.2`、本卡 `npm pack` 产物及测试驱动 `playwright-core@1.56.0`；不使用 force、legacy-peer-deps 或版本覆盖。可用 `CHROME_EXECUTABLE` 指定浏览器路径，默认读取 macOS Chrome 应用的可执行文件，使用全新临时浏览器 profile。
+
+该 PACKAGE/API 复核不启动完整默认应用，不连接服务器或持久化用户配置，不等于真实组合功能或产品 UI 验收。首页显示标题仍由 `J1S2-DESK-02` 打包层负责；本插件注册的品牌 namespace 不覆盖 conversation 字典。
+
 开源清单见 [OPEN_SOURCE.md](OPEN_SOURCE.md)。

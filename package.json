@@ -6,18 +6,28 @@
   "exports": {
     "./client": {
       "types": "./lib/client/index.d.ts",
-      "default": "./lib/client/index.js"
+      "node": "./lib/client/index.js",
+      "default": "./lib/client.js"
     },
     "./package.json": "./package.json"
   },
   "files": [
     "lib/client",
+    "lib/client.js",
+    "COMPATIBILITY.md",
     "OPEN_SOURCE.md"
   ],
   "scripts": {
     "test": "node --experimental-strip-types --test test/*.test.mjs",
     "check": "tsc --noEmit",
-    "build": "tsc",
+    "build": "tsc && node scripts/build-client.mjs",
+    "types": "npm run check",
+    "test:contract": "npm run build && node --experimental-strip-types --test test/*.test.mjs",
+    "toolchain": "node scripts/toolchain.mjs",
+    "preflight": "npm run toolchain && npm run types && npm run test:contract && node scripts/preflight.mjs",
+    "test:mutation": "npm run build && node scripts/mutation.mjs",
+    "test:package": "node test/package-api.mjs",
+    "test:profile": "node test/default-profile.mjs",
     "pretest": "npm run build",
     "prepack": "npm run build",
     "prepare": "npm run build"
@@ -48,6 +58,7 @@
   },
   "devDependencies": {
     "@types/react": "18.3.12",
+    "esbuild": "0.28.2",
     "typescript": "5.9.3"
   },
   "repository": {
