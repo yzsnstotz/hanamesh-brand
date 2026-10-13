@@ -31,27 +31,39 @@ async function fixture(kind) {
   if (kind === 'rejected') {
     await writeFile(join(dir, 'scripts', 'segflow-plugin.test.mjs'),
       "throw new Error('SEGFLOW_VERIFICATION_REJECTED');\n");
+  } else if (kind === 'normal') {
+    await cp(join(root, 'scripts', 'segflow-plugin.test.mjs'),
+      join(dir, 'scripts', 'segflow-plugin.test.mjs'));
   }
   return dir;
 }
 
-for (const kind of ['missing', 'rejected']) {
-  test(`card npm test fails when the mandatory plugin verification entry is ${kind}`, async () => {
+// Mechanism §4.1 separates the source card gate from product verification.
+// These tests invoke the fixed command only to check rejection; they never
+// supply a product environment or treat simulated-host success as acceptance.
+const command = ['--test', '--test-reporter=tap', 'scripts/segflow-plugin.test.mjs'];
+for (const kind of ['missing', 'rejected', 'normal']) {
+  test(kind === 'normal'
+    ? 'fixed plugin verify refuses acceptance without the program product environment'
+    : `fixed plugin verify propagates a ${kind} verification entry`, async () => {
     const dir = await fixture(kind);
     // Start an independent test runner, not a recursively invoked worker.
     const env = {...process.env};
     delete env.NODE_TEST_CONTEXT;
-    const result = spawnSync('npm', ['test'], {cwd: dir, encoding: 'utf8', env});
+    delete env.SEGFLOW_ENV_DIR;
+    delete env.SEGFLOW_PORT_CLIENT;
+    const result = spawnSync(process.execPath, command, {cwd: dir, encoding: 'utf8', env});
     assert.ifError(result.error);
     const output = result.stdout + result.stderr;
-    await writeFile(join(dir, 'npm-test.log'), output);
+    await writeFile(join(dir, 'verify.log'), output);
     await writeFile(join(dir, 'result.json'), JSON.stringify({
-      kind, command: ['npm', 'test'], cwd: dir, exitCode: result.status,
+      kind, command: [process.execPath, ...command], cwd: dir, exitCode: result.status,
     }, null, 2) + '\n');
     assert.equal(result.status, 1,
-      `card test must reject ${kind} verification entry; evidence: ${dir}/npm-test.log`);
+      `fixed verify must reject ${kind === 'normal' ? 'missing product environment' : kind + ' entry'}; evidence: ${dir}/verify.log`);
     assert.match(output, kind === 'missing'
       ? /segflow-plugin\.test\.mjs/
-      : /SEGFLOW_VERIFICATION_REJECTED/);
+      : kind === 'rejected' ? /SEGFLOW_VERIFICATION_REJECTED/
+      : /SEGFLOW_ENV_DIR|SEGFLOW_PORT_CLIENT/);
   });
 }
