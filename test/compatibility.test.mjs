@@ -82,7 +82,7 @@ test('explicit assembled check accepts compatible slots and does not change bran
 });
 test('waiting, collapse and redeclaration remain legal until an explicit assembled check', () => {
   const h = host([]); brand.apply(h.ctx);
-  assert.equal(h.entries.size, 0); assert.equal(h.waits.size, 3);
+  assert.equal(h.entries.size, 0); assert.equal(h.waits.size, 4);
   keys.forEach(key => h.declare(key)); verify(h.ctx);
   h.collapse(keys[2]); assert.equal(h.entries.size, 2); assert.equal(h.waits.size, 3);
   h.declare(keys[2]); verify(h.ctx); assert.equal(h.entries.size, 3);
@@ -108,3 +108,67 @@ test('unloading while declarations are pending cancels all future brand work', (
   const h = host([]); brand.apply(h.ctx); h.unload(); h.clean();
   keys.forEach(key => h.declare(key)); h.clean();
 });
+
+// Formal first-commit path: callback belongs to the normal registered React
+// checkpoint, not the verification global. SOURCE models the effect callback;
+// the separate product suite exercises the actual React mount and native dialog.
+function formalCommit(h) {
+  const entry = h.entries.get('shell.overlay');
+  assert.ok(entry, 'normal product must register its shell.overlay compatibility checkpoint');
+  const element = entry.component({});
+  assert.equal(typeof element.props.onCommit, 'function', 'formal React first-commit callback');
+  return element.props.onCommit();
+}
+for (const missing of keys) test(`verification off: formal first commit rejects ${missing} without any test global`, () => {
+  const h = host(keys.filter(key => key !== missing));
+  h.specs.set('shell.overlay', {type: 'slot', name: 'shell.overlay', kind: 'list',
+    scope: 'root', occupants: [], children: []});
+  const original = globalThis.window, alerts = [], events = [];
+  globalThis.window = {alert: message => alerts.push(message), dispatchEvent: event => { events.push(event); return true; }};
+  try {
+    brand.apply(h.ctx, {verification: {enabled: false}});
+    assert.equal(globalThis.window.hanameshBrandVerification, undefined);
+    assert.throws(() => formalCommit(h), error => error.code === 'BRAND_SLOT_MISSING' && error.slot === missing);
+    assert.equal(alerts.length, 1); assert.ok(alerts[0].includes(missing));
+    const failure = events.find(event => event.type === 'hanamesh-brand:rejected');
+    assert.ok(failure, 'normal product must publish its rejection after complete rollback');
+    assert.equal(failure.detail.code, 'BRAND_SLOT_MISSING');
+    assert.deepEqual(failure.detail.state.owned, {slots: 0, dictionaries: 0, themeLayers: 0, waits: 0});
+    h.clean(); h.declare(missing); h.clean(); h.unload(); h.clean();
+    assert.equal(globalThis.window.hanameshBrandVerification, undefined);
+  } finally { if (original === undefined) delete globalThis.window; else globalThis.window = original; }
+});
+test('formal checkpoint accepts declarations arriving before first commit and preserves later legal redeclaration', () => {
+  const h = host([]);
+  brand.apply(h.ctx, {verification: {enabled: false}});
+  assert.equal(h.entries.size, 0); // no early rejection just because initialization is waiting
+  keys.forEach(key => h.declare(key));
+  h.specs.set('shell.overlay', {type: 'slot', name: 'shell.overlay', kind: 'list',
+    scope: 'root', occupants: [], children: []});
+  // Drive the genuine registration callback for the public overlay declaration.
+  for (const wait of h.waits) if (wait.name === 'shell.overlay') wait.active = wait.run();
+  formalCommit(h);
+  assert.equal(h.entries.has('shell.overlay'), false, 'one-shot checkpoint also releases its own entry');
+  assert.equal(h.entries.size, 3); assert.equal(h.waits.size, 3);
+  h.collapse(keys[2]); assert.equal(h.entries.size, 2);
+  h.declare(keys[2]); assert.equal(h.entries.size, 3);
+  h.unload(); h.clean();
+});
+
+for (const [field, actual] of [['kind', 'chain'], ['scope', 'session']])
+  test(`verification off: formal behavior rejects incompatible ${field} and rolls back without global`, () => {
+    const h = host(); h.specs.get(keys[2])[field] = actual;
+    h.specs.set('shell.overlay', {type: 'slot', name: 'shell.overlay', kind: 'list', scope: 'root', occupants: [], children: []});
+    const original = globalThis.window, messages = [], events = [];
+    globalThis.window = {alert: message => messages.push(message), dispatchEvent: event => { events.push(event); return true; }};
+    try {
+      assert.throws(() => {
+        brand.apply(h.ctx, {verification: {enabled: false}}); formalCommit(h);
+      }, error => error.code === 'BRAND_SLOT_INCOMPATIBLE' && error.slot === keys[2]
+        && error.actual?.[field] === actual && error.expected?.kind === 'single' && error.expected?.scope === 'root');
+      assert.equal(messages.length, 1); assert.ok(messages[0].includes(keys[2]));
+      assert.equal(events.find(event => event.type === 'hanamesh-brand:rejected')?.detail.code, 'BRAND_SLOT_INCOMPATIBLE');
+      assert.equal(globalThis.window.hanameshBrandVerification, undefined);
+      h.clean(); h.unload(); h.clean();
+    } finally { if (original === undefined) delete globalThis.window; else globalThis.window = original; }
+  });
