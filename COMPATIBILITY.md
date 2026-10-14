@@ -42,3 +42,5 @@
 2026-10-14 的批准方案补正式 shell.overlay 首次 React commit 校验当前三槽位，不依赖测试 global。原 src 修复限本插件；五个 peer、正式 dsh-v0.2.0-rc.2/639ed015397290b3745d163aafe02ffee4aa3f84、default/Node/类型入口及原业务默认值保留。此前2026-10-11“src未改动”的描述属于当次发布修复的历史证据，本次行为追加按上面的公开源码合约适配。
 
 SOURCE 锁定31项测试覆盖缺项/形状、verification关闭的正式拒绝、全回滚/延迟错误/取消及合法等待；独立 PRODUCT 13个场景须由程序 main 后真实 CLIENT 运行。正式包移除 observer，verification包只追加只读观察；两包均使用同一正式行为，不允许观察面成为校验触发者。PACKAGE/API 隔离夹具仍不挂完整应用，无法代替完整产品或 owner 验收。完整命令与本版消费者resolved/包字节证据位于本卡运行目录 REPORT.md；不以历史成功代替本轮复核。
+
+D-82 产物供给修正：verification 浏览器入口以同一公开 apply 显式启用只读观察，不再依赖固定宿主未提供的 Host 配置转发；正式 release 及 Node/类型入口保持。负例 producer 消费已审 fixture 清单并 external React，正常 bundle patch/元数据入口随 fixture 发布，不进入品牌包。目标宿主仍为 d743267388641bc76f17c45ce8b4c231aed1d32c（Desktop/DSH 0.2.1-alpha.2、Cordis 4.0.5-alpha.1、pnpm11.28.5）；此前 rc.2 SDK/默认 profile 证据仅是隔离参考。五个品牌 peer 保留，实际固定宿主严格安装/resolved/API 和真实产品结果由程序正常安装后采证，版本号差异本身不是不兼容证明。

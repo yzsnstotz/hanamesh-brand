@@ -38,13 +38,15 @@ Node 24：`npm ci && npm test`；`npm run check` 做类型检查；`npm pack` �
 
 正式故障在回滚后原生 `window.alert` 给出准确原因，再发送 `hanamesh-brand:rejected` CustomEvent 并抛原错。detail={code,message,slot?,actual?,expected?,state}；state 记录真实 phase/declarations/owned 和独立 conversation 文案及无关主题 token 的公开读回。无法核实其它贡献时 otherContributionsPreserved=false，不假造 true；告警设施自身失败会报告 BRAND_ERROR_NOTIFICATION_FAILED，仍保留原错误。该故障面不受 verification 开关控制。
 
-默认正式 `npm run build` 移除观察面代码。测试构建 `npm run build -- --verification` 只追加观察代码，再在正常安装时公开配置 verification.enabled=true；`window.hanameshBrandVerification` 仅有只读 inspect()，没有 validate。其 `hanamesh-brand:lifecycle` 发送实际 waiting/active/完成释放状态，含 compatibilityCheck=pending|passed。拒绝/卸载移除本方 global，事件只报告已实际释放的资源。产品验证只经 PM 提供的正常操作触发首次检查，不执行 JS 校验、启动服务或写用户 profile。
+默认正式 `npm run build` 移除观察面代码。D-82 测试构建 `npm run build -- --verification` 在浏览器入口用同一公开 `apply(ctx, {verification:{enabled:true}})` 启用只读观察；固定客户端加载器不透传 Host 配置，因此不要求 PM 从 profile 转发此值。正式入口、默认 false、Node/类型入口及拒绝/回滚实现保持。`window.hanameshBrandVerification` 仅有只读 inspect()，没有 validate。其 `hanamesh-brand:lifecycle` 发送实际 waiting/active/完成释放状态，含 compatibilityCheck=pending|passed。拒绝/卸载移除本方 global，事件只报告已实际释放的资源。产品验证只经 PM 提供的正常操作触发首次检查，不执行 JS 校验、启动服务或写用户 profile。
 
 确定性例：首次三项 single/root→passed/active，slots=3、dictionary=1、themeLayer=1、waits=3；检查前暂无声明→pending/waiting，四等待；首 commit 缺 sidebar.brand.name→原生明确拒绝、该 slot 的 missing 事件及四项计数0；首 commit 前补齐→成功；通过后合法撤回 hero→waiting，重声明→active；正常卸载→disposed/0，原 contribution 由各上游 disposer 还原。
 
 ## 程序验证供给
 
 卡 `npm test` 保持 SOURCE/FIXTURE，固定 `node --test --test-reporter=tap scripts/segflow-plugin.test.mjs` 为 main 后独立 PRODUCT。依赖 `playwright-core@1.56.0` 仅为开发验证驱动，无浏览器下载/服务启动代码，不进发布包。PM 准备真实 CLIENT 的正常安装/配置、页面选择与可见 ready；测试只消费公开输入 `SEGFLOW_ENV_DIR/hanamesh-brand-inputs.json` 和 `SEGFLOW_PORT_CLIENT`。字段及13个场景见锁定 `test/product-inputs.md`，其“提案”文字为锁题历史，本节是实现后的提供方说明。
+
+D-82 实际目标是上游 `d743267388641bc76f17c45ce8b4c231aed1d32c`、Desktop/DSH `0.2.1-alpha.2`、宿主 Cordis `4.0.5-alpha.1`、bundled pnpm `11.28.5`。旧 rc.2 SDK 仅为隔离 PACKAGE/API 参考；品牌五 peer 声明仍 rc.2。宿主身份、实际严格安装日志/resolved 和公开 default 加载分别采证；未取得真实安装结果前不判兼容或升级，不使用 override、版本豁免或旧宿主迁就测试。输入 schema2 是本方测试格式，生成和正常安装归 PM environment。
 
 同一提交的两种正常包：
 
@@ -56,6 +58,8 @@ npm pack --ignore-scripts --pack-destination <verification目录>
 npm run build
 ```
 
-第二次 ignore-scripts 只为保留刚完成的显式 verification 构建；不省略实际 build，也不进入正式发布。两包各自记录 SHA256/来源提交、五 lib 文件 hash，PM 正常安装它们，验证按实际已执行脚本字节对照。附属负例 `test/negative-declarer.client.mjs` 是锁定 FIXTURE；可通过 `node scripts/build-negative-declarer.mjs --out-dir <隔离fixture目录>` 产生正常可安装包，然后 `npm pack <该目录>`。其显式正 priority 必须使 root entry shadowed；它只证明拒绝，不证明正式 peer 兼容，不替换上游源码。
+第二次 ignore-scripts 只为保留刚完成的显式 verification 构建；不省略实际 build，也不进入正式发布。两包各自记录 SHA256/来源提交、五 lib 文件 hash，PM 正常安装它们，验证按实际已执行脚本字节对照。
+
+附属负例 `test/negative-declarer.client.mjs` 是锁定 FIXTURE；`node scripts/build-negative-declarer.mjs --out-dir <隔离fixture目录>` 消费其已审 packageInputs，生成共享 React 的 client 工厂、Host 元数据入口、正常 manifest 和 cordis.patch.yml。再用 `npm pack <该目录> --ignore-scripts --pack-destination <隔离包目录>` 供正常安装；fixture renderer peer 为目标 SDK `0.2.1-alpha.2`，不改变品牌 peer。fixture 只经 shell.overlay 持有自己的控件及声明，六种 mode 用正常 select/declare/withdraw 切换；不争 root、不撤他方或触发品牌检查。真实原声明者须先正常退出；碰撞显示真实错误。正例仍使用真实 provider，fixture 不证明正式兼容性。PM 正常操作、选窗及 schema2 供给缺口一次列在锁定输入文档；本模块不启停 CLIENT 或写用户 profile。
 
 公开 inputs.diagnosticBudgets 默认毫秒：cdpConnectMs=30000、uiOperationMs=30000、lifecycleSignalMs=15000、productCaseMs=120000、teardownMs=5000；可具名覆盖，整数1..2147483647是 Node timer 表达范围，均为测试诊断、非安全策略。参数及默认等待显式传给 Playwright。耗尽仅报 DIAGNOSTIC_UNFINISHED、预算/现场/原 cause，不断定缺槽位、不加时重试；取消/结束解除计时器、waiter、DOM/CDP订阅，断开自己的 transport、不停止 CLIENT。真实装配未完成及无法确认释放保留故障与现场，不能当产品通过。完整工程门、真实产品门与 owner 门均保留。
