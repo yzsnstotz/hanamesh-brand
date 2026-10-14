@@ -14,8 +14,12 @@ const peers = ['ui-renderer', 'ui-sidebar', 'ui-conversation', 'locale', 'ui-the
   .map(name => '@deepseek-ai/dsh-client-' + name);
 const scenarios = ['light', 'dark', 'unload', 'delayed', 'redeclared',
   ...slots.map(slot => 'missing:' + slot), 'incompatible:kind', 'incompatible:scope', ...slots.map(slot => 'release-missing:' + slot)];
+const HOST = Object.freeze({upstreamSha: 'd743267388641bc76f17c45ce8b4c231aed1d32c',
+  desktop: '0.2.1-alpha.2', dsh: '0.2.1-alpha.2', cordis: '4.0.5-alpha.1', pnpm: '11.28.5'});
+// Historical PACKAGE SDK is a reference, never a claimed Desktop identity.
+const SDK_REFERENCE = Object.freeze({tag: 'dsh-v0.2.0-rc.2', sha: '639ed015397290b3745d163aafe02ffee4aa3f84'});
 const hash = data => createHash('sha256').update(data).digest('hex');
-let browser, inputs, output, activeSignal;
+let browser, inputs, output, activeSignal, resetCase;
 let configuration = budgets(), lastEvidence = {};
 let diagnostic = new DiagnosticBudget(configuration, () => lastEvidence);
 function ui(label, operation) { return diagnostic.run('uiOperationMs', label, operation, activeSignal); }
@@ -25,7 +29,21 @@ function productTest(label, operation) {
     try {
       await diagnostic.run('productCaseMs', label, async signal => {
         activeSignal = signal;
-        operationDone = Promise.resolve().then(() => operation({signal}));
+        operationDone = Promise.resolve().then(async () => {
+          let primary;
+          try { return await operation({signal}); } catch (error) { primary = error; throw error; }
+          finally {
+            if (resetCase) {
+              const reset = resetCase; resetCase = undefined;
+              try { await diagnostic.run('teardownMs', 'normal product case reset', async resetSignal => {
+                activeSignal = resetSignal; await reset();
+              }); } catch (release) {
+                if (primary) throw new AggregateError([primary, release], 'CASE_AND_NORMAL_RESET_FAILED');
+                throw release;
+              }
+            }
+          }
+        });
         return operationDone;
       }, t.signal);
     } catch (error) {
@@ -52,20 +70,34 @@ test.before(async () => {
     'CLIENT_ASSEMBLY: SEGFLOW_PORT_CLIENT must be supplied by the program');
   const root = await realpath(process.env.SEGFLOW_ENV_DIR);
   // Proposed module-owned public test input, specified in product-inputs.md.
-  // It contains normal operations/locators and installed paths, never results.
-  inputs = JSON.parse(await readFile(join(root, 'hanamesh-brand-inputs.json'), 'utf8'));
-  assert.equal(inputs.schema, 1);
+  // It contains normal operations and installed paths, never supplied UI results.
+  try { inputs = JSON.parse(await readFile(join(root, 'hanamesh-brand-inputs.json'), 'utf8')); }
+  catch (cause) { throw new Error('CLIENT_INPUT_NOT_PREPARED: normal PM environment must generate hanamesh-brand-inputs.json; no CDP/brand assertion executed', {cause}); }
+  assert.equal(inputs.schema, 2);
   configuration = budgets(inputs.diagnosticBudgets);
   diagnostic = new DiagnosticBudget(configuration, () => lastEvidence);
   console.log('hanamesh-brand diagnostic budgets (ms)', JSON.stringify(configuration));
-  assert.equal(inputs.upstreamTag, 'dsh-v0.2.0-rc.2');
-  assert.equal(inputs.upstreamSha, '639ed015397290b3745d163aafe02ffee4aa3f84');
+  assert.deepEqual(inputs.sdkReference, SDK_REFERENCE, 'reference only; not an installed-host assertion');
+  assert.equal(inputs.host.upstreamSha, HOST.upstreamSha);
   assert.deepEqual(Object.keys(inputs.cases).sort(), [...scenarios].sort());
   async function contained(path) {
     const value = await realpath(path), rel = relative(root, value);
     assert.ok(rel && rel !== '..' && !rel.startsWith('../') && !isAbsolute(rel),
       'CLIENT_ASSEMBLY: installed package must belong to this program run');
     return value;
+  }
+  // Public packaging identity plus the actual runtime manifests. No old SDK
+  // values may stand in for what the fixed Desktop really contains.
+  inputs.host.checkoutDir = await contained(inputs.host.checkoutDir);
+  assert.equal((await readFile(join(inputs.host.checkoutDir, 'packaging/upstream.sha'), 'utf8')).trim(), HOST.upstreamSha);
+  assert.equal(execFileSync('git', ['rev-parse', 'HEAD'], {cwd: inputs.host.checkoutDir, encoding: 'utf8'}).trim(), inputs.host.forkCommit);
+  execFileSync('git', ['merge-base', '--is-ancestor', HOST.upstreamSha, 'HEAD'], {cwd: inputs.host.checkoutDir});
+  for (const [key, name] of [['desktop', '@deepseek-ai/dsh-desktop'], ['dsh', '@deepseek-ai/dsh'],
+    ['cordis', '@deepseek-ai/cordis'], ['pnpm', 'pnpm']]) {
+    const dir = await contained(inputs.host.packageDirs[key]);
+    const actual = JSON.parse(await readFile(join(dir, 'package.json'), 'utf8'));
+    assert.equal(actual.name, name); assert.equal(actual.version, HOST[key], 'actual fixed host ' + key);
+    inputs.host.packageDirs[key] = dir;
   }
   const sourceSha = execFileSync('git', ['rev-parse', 'HEAD'], {
     cwd: fileURLToPath(new URL('../', import.meta.url)), encoding: 'utf8',
@@ -81,6 +113,16 @@ test.before(async () => {
     assert.equal(pkg.exports['./client'].node, './lib/client/index.js');
     assert.equal(pkg.exports['./client'].types, './lib/client/index.d.ts');
     assert.equal(candidate.artifact.sourceSha, sourceSha, 'candidate artifact must be this module version');
+    assert.equal(candidate.installation.peerMode, 'strict');
+    assert.equal(candidate.installation.runtimeVersion, HOST.dsh);
+    assert.ok(Array.isArray(candidate.installation.argv), 'CLIENT_INSTALL_EVIDENCE_MISSING: actual strict argv required');
+    assert.ok(candidate.installation.argv.some(arg => ['--strict-peer-dependencies', '--config.strict-peer-dependencies=true'].includes(arg)));
+    assert.equal(candidate.installation.argv.some(arg => /^--(force|legacy-peer-deps|ignore-peer|no-strict-peer|override)/.test(arg)), false);
+    assert.deepEqual(candidate.installation.versionExemptions, [], 'normal install without a version exemption');
+    const installLog = await contained(candidate.installation.log);
+    assert.equal(hash(await readFile(installLog)), candidate.installation.logSha256);
+    assert.equal(candidate.installation.exitCode, 0,
+      'HOST_STRICT_INSTALL_FAILED: retain real incompatible-version/peers and rollback evidence for PM; no override/exemption');
     const tarball = await contained(candidate.artifact.tarball);
     for (const path of ['lib/client.js', 'lib/client/index.js', 'lib/client/index.d.ts',
       'lib/client/Brand.js', 'lib/client/Brand.d.ts']) {
@@ -93,8 +135,10 @@ test.before(async () => {
     for (const peer of peers) {
       const dir = await contained(candidate.peerPackageDirs[peer]);
       const actual = JSON.parse(await readFile(join(dir, 'package.json'), 'utf8'));
-      assert.equal(actual.name, peer); assert.equal(actual.version, '0.2.0-rc.2');
-      assert.equal(pkg.peerDependencies[peer], actual.version);
+      assert.equal(actual.name, peer);
+      assert.equal(pkg.peerDependencies[peer], '0.2.0-rc.2', 'retained plugin declaration; not the runtime identity');
+      assert.equal(actual.version, candidate.resolved[peer].version, 'read real installed resolved version');
+      assert.equal(hash(await readFile(join(dir, 'package.json'))), candidate.resolved[peer].manifestSha256);
       candidate.peerPackageDirs[peer] = dir;
     }
   }
@@ -127,7 +171,9 @@ test.after(async () => {
 
 async function pageFor(name) { return ui('product page identity/ready: ' + name, async () => {
   const spec = inputs.cases[name];
-  assert.ok(spec.targetId && spec.ready && spec.locators, 'CLIENT_ASSEMBLY: incomplete normal case input ' + name);
+  assert.ok(spec.targetId && Array.isArray(spec.setup) && spec.setup.length
+    && Array.isArray(spec.reset) && spec.reset.length,
+    'CLIENT_ASSEMBLY: actual selected target and normal setup/reset required: ' + name);
   const matches = [];
   for (const context of browser.contexts()) for (const page of context.pages()) {
     const session = await context.newCDPSession(page);
@@ -138,20 +184,40 @@ async function pageFor(name) { return ui('product page identity/ready: ' + name,
   }
   assert.equal(matches.length, 1, 'CLIENT_ASSEMBLY: program-selected Desktop target ' + name);
   const page = matches[0];
+  resetCase = async () => { for (const step of spec.reset) await action(page, step); };
   assert.equal(new URL(page.url()).protocol, 'dsh-app:');
   assert.equal(new URL(page.url()).host, 'app');
   assert.equal(new URL(page.url()).pathname, '/');
-  assert.ok(spec.preservedControls.length >= 2, 'welcome/sidebar observations must be supplied');
-  // Ready is a real, visible application surface chosen by PM, not a CDP page count.
-  assert.ok(await page.locator(spec.ready).isVisible(), 'CLIENT_ASSEMBLY: normal application surface absent ' + name);
+  assert.ok(await page.locator('body').isVisible(), 'CLIENT_ASSEMBLY: normal app body absent');
   assert.equal(await page.locator('[data-dsh-boot]').count(), 0, 'CLIENT_ASSEMBLY: boot has not handed off');
   assert.equal(spec.release ?? false, name.startsWith('release-missing:'));
-  if (name.startsWith('release-missing:'))
-    assert.equal(await page.evaluate(() => typeof window.hanameshBrandVerification), 'undefined', 'release mode has no test global');
-  else assert.equal(await page.evaluate(() => typeof window.hanameshBrandVerification?.inspect), 'function',
-    'BRAND_LOAD: candidate observation face must come from the normally installed plugin');
-  lastEvidence = {case: name, targetId: spec.targetId, url: page.url(), stage: 'normal-frame-visible'};
+  lastEvidence = {case: name, targetId: spec.targetId, url: page.url(), stage: 'actual-loaded-bundles'};
   await loadedBytes(page, spec);
+  // These are ordinary Plugin Manager/settings/fixture UI actions. Locked or
+  // absent controls fail with their real reason; never use a private Context.
+  for (const step of spec.setup) await action(page, step);
+  if (spec.release) assert.equal(await page.evaluate(() => typeof window.hanameshBrandVerification), 'undefined');
+  else await diagnostic.run('lifecycleSignalMs', 'normal setup phase: ' + name, () => page.waitForFunction(phase =>
+    window.hanameshBrandVerification?.inspect().phase === phase,
+    name === 'delayed' ? 'waiting' : 'active', {timeout: configuration.lifecycleSignalMs}), activeSignal);
+  if (name !== 'delayed') {
+    await bindPresentation(page, spec);
+    // Observe actual fallback text/color in this same client with brand normally
+    // disabled, then restore it. They are observations, not supplied answers.
+    assert.ok(spec.baseline?.disable?.length && spec.baseline?.restore?.length,
+      'CLIENT_BASELINE_OPERATION_MISSING: normal brand disable/restore not provided');
+    for (const step of spec.baseline.disable) await action(page, step);
+    await ui('capture real unbranded UI', async () => {
+      spec.originalText = Object.fromEntries(await Promise.all(slots.map(async slot =>
+        [slot, (await page.locator(spec.locators[slot]).textContent()).trim()])));
+      spec.originalColor = await page.locator(spec.locators.themeRoot).evaluate(node =>
+        getComputedStyle(node).getPropertyValue('--dsw-alias-state-business-primary').trim());
+    });
+    for (const step of spec.baseline.restore) await action(page, step);
+    if (!spec.release) await diagnostic.run('lifecycleSignalMs', 'baseline restore phase: ' + name, () => page.waitForFunction(() =>
+      window.hanameshBrandVerification?.inspect().phase === 'active', undefined,
+      {timeout: configuration.lifecycleSignalMs}), activeSignal);
+  }
   return {page, spec};
 }); }
 async function loadedBytes(page, spec) {
@@ -159,18 +225,37 @@ async function loadedBytes(page, spec) {
   session.on('Debugger.scriptParsed', value => parsed.push(value));
   try {
     await session.send('Debugger.enable');
+    const graph = await page.evaluate(() => window.__DSH_BOOT__); // documented public boot graph; read only
+    assert.ok(graph?.entries?.length && graph?.batches?.length, 'CLIENT_ASSEMBLY: actual boot graph absent');
     const candidate = spec.release ? inputs.release : inputs;
     const packages = [['hanamesh-brand', candidate.installedPackageDir],
       ...peers.map(peer => [peer, candidate.peerPackageDirs[peer]])];
+    const sources = new Map();
+    // Public combo transport replaces source-map trailers; executable bytes
+    // remain unchanged. Record raw package hashes and matching transport bytes.
+    const executable = text => text.replace(/^\/\/[#@] sourceMappingURL=.*$/gm, '').trimEnd();
     for (const [name, dir] of packages) {
-      const url = spec.bundleUrls[name];
-      assert.ok(url && new URL(url).protocol === 'dsh-app:', 'CLIENT_ASSEMBLY: normal bundle URL ' + name);
-      const rows = parsed.filter(row => row.url === url);
-      assert.equal(rows.length, 1, 'BRAND_LOAD: one actually executed normal bundle ' + name);
-      const {scriptSource} = await session.send('Debugger.getScriptSource', {scriptId: rows[0].scriptId});
+      assert.equal(graph.entries.filter(entry => entry.id === name).length, 1, 'actual boot entry ' + name);
       const pkg = JSON.parse(await readFile(join(dir, 'package.json'), 'utf8'));
-      const path = name === 'hanamesh-brand' ? pkg.exports['./client'].default : 'lib/client.js';
-      assert.equal(hash(scriptSource), hash(await readFile(join(dir, path))), 'BRAND_LOAD: resolved bytes ' + name);
+      const entry = pkg.exports['./client'];
+      const path = typeof entry === 'string' ? entry : entry.default;
+      const bytes = await readFile(join(dir, path)), expected = executable(bytes.toString('utf8'));
+      const urls = new Set([graph.entries.find(entry => entry.id === name).url,
+        ...graph.batches.filter(batch => batch.entries.includes(name)).map(batch => batch.url)]
+        .map(url => new URL(url, page.url()).href));
+      let matched = false;
+      for (const row of parsed.filter(row => urls.has(row.url))) {
+        if (!sources.has(row.scriptId)) sources.set(row.scriptId,
+          (await session.send('Debugger.getScriptSource', {scriptId: row.scriptId})).scriptSource);
+        const source = executable(sources.get(row.scriptId)), offset = source.indexOf(expected);
+        if (offset >= 0 && source.indexOf(expected, offset + expected.length) === -1) {
+          assert.equal(hash(source.slice(offset, offset + expected.length)), hash(expected), 'actual factory transport bytes');
+          lastEvidence = {...lastEvidence, loaded: {...lastEvidence.loaded,
+            [name]: {url: row.url, packageSha256: hash(bytes), executableSha256: hash(expected)}}};
+          matched = true; break;
+        }
+      }
+      assert.ok(matched, 'BRAND_LOAD: actual single/combo execution must contain installed default bytes: ' + name);
     }
   } finally { await session.detach(); }
 }
@@ -182,7 +267,9 @@ function clear(state) {
   assert.deepEqual(state.owned, {slots: 0, dictionaries: 0, themeLayers: 0, waits: 0});
   assert.equal(state.otherContributionsPreserved, true);
 }
-async function appearance(page, spec, palette) { return ui('actual brand appearance', async () => {
+async function appearance(page, spec, palette) {
+  if (!spec.locators) await bindPresentation(page, spec);
+  return ui('actual brand appearance', async () => {
   for (const [slot, text] of slots.map((slot, index) => [slot, ['H', 'HanaMesh', 'H'][index]])) {
     const node = page.locator(spec.locators[slot]);
     assert.equal(await node.count(), 1, 'visible slot occupant ' + slot);
@@ -196,18 +283,73 @@ async function appearance(page, spec, palette) { return ui('actual brand appeara
 }); }
 async function save(name, page, state) { return ui('actual screenshot/evidence: ' + name, async () => {
   await writeFile(join(output, name.replaceAll(':', '-') + '.json'), JSON.stringify({
-    url: page.url(), targetId: inputs.cases[name].targetId, upstreamTag: inputs.upstreamTag,
+    url: page.url(), targetId: inputs.cases[name].targetId, host: inputs.host, sdkReference: inputs.sdkReference,
+    loaded: lastEvidence.loaded,
     artifact: (inputs.cases[name].release ? inputs.release : inputs).artifact,
     resolved: (inputs.cases[name].release ? inputs.release : inputs).peerPackageDirs, state,
   }, null, 2) + '\n');
   await page.screenshot({path: join(output, name.replaceAll(':', '-') + '.png'), fullPage: true, timeout: configuration.uiOperationMs});
 }); }
-// PM supplies normal UI operations, not JS/private imports or generated outcomes.
+// Public UI only: source-backed controls, with desired switch state so reset
+// is deterministic. No command execution, profile writes, or guessed JS ports.
 async function action(page, step) { return ui('normal UI operation: ' + step.name, async () => {
-  assert.deepEqual(Object.keys(step).sort(), ['name', 'role']);
+  assert.deepEqual(Object.keys(step).sort(), step.select !== undefined ? ['name', 'role', 'select']
+    : step.checked === undefined ? ['name', 'role'] : ['checked', 'name', 'role']);
   const control = page.getByRole(step.role, {name: step.name, exact: true});
-  assert.equal(await control.count(), 1); assert.ok(await control.isVisible());
+  assert.equal(await control.count(), 1, 'CLIENT_PUBLIC_OPERATION_UNAVAILABLE: ' + step.name);
+  assert.ok(await control.isVisible());
+  assert.ok(await control.isEnabled(), 'CLIENT_PUBLIC_OPERATION_LOCKED: ' + step.name + '; ' + await control.getAttribute('title'));
+  if (step.select !== undefined) {
+    assert.equal(step.role, 'combobox'); await control.selectOption(step.select, {timeout: configuration.uiOperationMs});
+    assert.equal(await control.inputValue(), step.select); return;
+  }
+  if (step.checked !== undefined) {
+    assert.equal(typeof step.checked, 'boolean');
+    assert.ok(['switch', 'checkbox', 'radio'].includes(step.role));
+    if (await page.getByRole(step.role, {name: step.name, exact: true, checked: step.checked}).count() === 1) return;
+  }
   await control.click({timeout: configuration.uiOperationMs});
+  if (step.name === 'Brand fixture: declare') {
+    assert.equal(await page.getByRole('region', {name: 'Brand declaration fixture', exact: true}).getByRole('alert').count(), 0,
+      'CLIENT_FIXTURE_DECLARATION_FAILED: inspect actual fixture error');
+    const rows = JSON.parse(await page.getByRole('status', {name: 'Brand fixture declarations', exact: true}).textContent());
+    const name = lastEvidence.case;
+    const missing = name?.startsWith('release-missing:') ? name.slice(16) : name?.startsWith('missing:') ? name.slice(8) : undefined;
+    assert.deepEqual(rows.map(row => row.name).sort(), slots.filter(slot => slot !== missing).sort(), 'actual fixture declaration roster');
+    for (const row of rows) {
+      assert.equal(row.kind, name === 'incompatible:kind' && row.name === slots[2] ? 'chain' : 'single');
+      assert.equal(row.scope, name === 'incompatible:scope' && row.name === slots[2] ? 'session' : 'root');
+    }
+  }
+  if (step.checked !== undefined) await page.getByRole(step.role, {name: step.name, exact: true, checked: step.checked})
+    .waitFor({state: 'visible', timeout: configuration.uiOperationMs});
+}); }
+async function bindPresentation(page, spec) { return ui('observe actual brand containers and retained UI', async () => {
+  const observed = await page.evaluate(() => {
+    const path = element => {
+      const parts = [];
+      for (let el = element; el && el !== document.body; el = el.parentElement) {
+        const peers = [...el.parentElement.children].filter(item => item.tagName === el.tagName);
+        parts.unshift(el.tagName.toLowerCase() + ':nth-of-type(' + (peers.indexOf(el) + 1) + ')');
+      }
+      return 'body > ' + parts.join(' > ');
+    };
+    const spans = [...document.querySelectorAll('span')];
+    const mark = size => spans.filter(el => el.textContent === 'H' && el.style.display === 'inline-grid'
+      && el.style.width === size + 'px');
+    const names = spans.filter(el => el.childElementCount === 0 && el.textContent === 'HanaMesh' && el.closest('[aria-hidden="true"]'));
+    const marks = [mark(24), names, mark(34)];
+    const controls = [...document.querySelectorAll('button')].filter(el =>
+      ['New session', '新建会话', 'Collapse sidebar', '收起侧边栏'].includes(el.getAttribute('aria-label')));
+    return {counts: marks.map(rows => rows.length), slots: marks.map(rows => rows.length === 1 ? path(rows[0].parentElement) : null),
+      controls: controls.map(path), controlNames: controls.map(el => el.getAttribute('aria-label'))};
+  });
+  assert.deepEqual(observed.counts, [1, 1, 1], 'real expanded sidebar and blank-session hero must display all brand occupants');
+  assert.ok(observed.controls.length >= 2, 'actual original sidebar/new-session controls absent');
+  assert.ok(observed.controlNames.some(name => ['New session', '新建会话'].includes(name)));
+  assert.ok(observed.controlNames.some(name => ['Collapse sidebar', '收起侧边栏'].includes(name)));
+  spec.locators = Object.fromEntries(slots.map((slot, i) => [slot, observed.slots[i]]));
+  spec.locators.themeRoot = 'body'; spec.preservedControls = observed.controls;
 }); }
 for (const palette of ['light', 'dark']) productTest('normal Desktop brand appearance and actual API: ' + palette, async () => {
   const {page, spec} = await pageFor(palette);
@@ -218,6 +360,7 @@ for (const palette of ['light', 'dark']) productTest('normal Desktop brand appea
     const node = state.declarations.find(node => node.name === key);
     assert.ok(node); assert.equal(node.kind, 'single'); assert.equal(node.scope, 'root');
     assert.ok(node.declaredBy, 'real provider declaration owner');
+    assert.equal(/fixture|negative-declarer/.test(node.declaredBy), false, 'positive compatibility uses genuine providers');
   }
   assert.equal(state.locale, palette === 'light' ? 'en' : 'zh');
   assert.equal(state.brandHeadline, palette === 'light'
@@ -373,6 +516,8 @@ for (const name of scenarios.filter(name => name.startsWith('missing:') || name.
       assert.ok(native.messages[0].includes(result.slot));
       await ui('rejection removes observation face', async () =>
         assert.equal(await page.evaluate(() => typeof window.hanameshBrandVerification), 'undefined'));
+      assert.ok(spec.restoreProviders?.length, 'CLIENT_PROVIDER_RESTORE_UNAVAILABLE');
+      for (const step of spec.restoreProviders) await action(page, step);
       await save(name, page, result);
     }); } finally { await native.close(); }
   });
@@ -391,6 +536,8 @@ for (const name of ['delayed', 'redeclared']) productTest('legal public declarat
       && (name === 'delayed' || history.indexOf(state) > history.findLastIndex(row => row.phase === 'waiting')));
     assert.equal(observation.states.some(state => state.phase === 'rejected'), false);
     assert.equal(current.owned.slots, 3); assert.equal(current.owned.waits, 3);
+    assert.ok(spec.restoreProviders?.length, 'CLIENT_PROVIDER_RESTORE_UNAVAILABLE');
+    for (const step of spec.restoreProviders) await action(page, step);
     await appearance(page, spec, spec.palette); await save(name, page, [initial, ...observation.states]);
   });
 });
@@ -415,6 +562,8 @@ for (const slot of slots) productTest('release mode normal React commit rejects 
       await native.completed();
       assert.equal(native.failures.length, 0); assert.equal(native.messages.length, 1);
       assert.ok(native.messages[0].includes(slot));
+      assert.ok(spec.restoreProviders?.length, 'CLIENT_PROVIDER_RESTORE_UNAVAILABLE');
+      for (const step of spec.restoreProviders) await action(page, step);
       await ui('release rejection leaves no observer and restores actual UI', async () => {
         assert.equal(await page.evaluate(() => typeof window.hanameshBrandVerification), 'undefined');
         assert.equal(await page.locator(spec.locators.themeRoot).evaluate(node =>

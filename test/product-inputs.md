@@ -1,88 +1,86 @@
-# J1S2-BRAND-02 产品验证公开输入（提案，待审）
+# J1S2-BRAND-02 · Q-220 修题提案（待重审）
 
-本文件定义本模块供 PM 接入的正常输入和观察方式，**不是已经存在的 Desktop 跨模块 API**。安装、配置、选择自有窗口和产品就绪由 PM environment 服务准备/启动命令实现；本卡不编造或启动这些服务。卡 `npm test` 不运行产品测试。main 推送后，程序运行固定 `scripts/segflow-plugin.test.mjs`。
+本轮只修三个解锁测试及方案；其余四锁题、原八断言、31项SOURCE、1bcadd1正式拒绝/回滚/只读观察、全部13产品场景及五项预算/释放保留。不得改生产代码/peer迁就测试。下面是**本方测试需要的输入，不是已存在的Desktop prepare API**。main后的缺文件仍未修，不宣称正常装载或产品通过；交审不等待该文件。
 
-## 正常产物与观察面
+## 真实宿主与参考SDK分离
 
-提交的正常 `npm pack` tgz（仍只含 dsh.client）和该 tgz 的 SHA256、来源提交、lib/client.js、Node JS、类型文件 SHA256。正式 default 入口保持 `./lib/client.js`，正式 tag 保持 `dsh-v0.2.0-rc.2` / `639ed015397290b3745d163aafe02ffee4aa3f84`，五 peer 保持 rc.2。
+实际目标：上游 `d743267388641bc76f17c45ce8b4c231aed1d32c`，Desktop与DSH `0.2.1-alpha.2`，宿主Cordis `4.0.5-alpha.1`，bundled pnpm `11.28.5`。来源为固定提交的package.json:2–8、apps/desktop/package.json:2–4、apps/cli/package.json:2–4、vendor/cordis/package.json:2–4；fork公开packaging/upstream.sha及HANAMESH-FORK.md标识基线。只读源码证据归档在本卡运行目录 evidence/q220-upstream，manifest有来源SHA/路径/hash。
 
-正式行为提案（尚未实现）：新增 `validateSlots(ctx)`，按真实公开 `slots.snapshot()` 检查三个品牌声明为 single/root。通过 **公开增量槽位 `shell.overlay`** 安装一次性 React 检查组件，其首次 `useLayoutEffect`/commit 调用同一校验；成功立即撤销检查组件及其 inject 等待。固定 renderer 在完整客户端 roster 稳定后 mount AppFrame；此时读取当前已装配组合，绝不声称这是上游“永久缺失终态”。动态正常启用本插件也走同一首次 commit。
+旧 `dsh-v0.2.0-rc.2 / 639ed015397290b3745d163aafe02ffee4aa3f84` 仅为已完成PACKAGE/API的SDK参考，绝不填写为实际Desktop身份。插件五peer声明仍0.2.0-rc.2、Cordis仍4.0.4；与宿主实装resolved、宿主自有Cordis分开记录。不能推算“版本不同所以升级”，也不能装旧宿主、加override/legacy-peer-deps/force、版本豁免或偷补包。必须正常严格安装；真实 `incompatible-version`/unsatisfied peers及回滚结果才是给PM的兼容处置依据，失败时十三场景不跳过、更不能整体通过。
 
-依据：固定上游 `upstream/packages/client/ui-renderer/src/client/registry.ts:28–42` 明示禁止争夺 root，扩展用 shell.overlay；`ui-renderer/src/client/index.ts:1–4,59–98` 的 roster/mount/React 路径；`git show 639ed015:packages/client/ui-layout/src/client/index.ts:98,178` 的 list/root 声明与注册（完整来源副本存运行目录 evidence/d78-upstream）。初始装载、未首次 commit 前的 inject 等待合法；第一次兼容检查通过后，provider 合法撤回、延迟再声明继续 waiting/active，不反复检查成缺失。若 shell.overlay/AppFrame 未装配，诊断未完成，不能推断永久缺槽位。
+## 本方正常供给和PM接入边界
 
-首次检查缺项/已声明形状不兼容以及异步真实注册错误，统一回滚本方所有贡献、等待和检查组件，保留准确 cause。在正式构建且 verification 关闭、无测试 global 时也必定执行：以原生 `window.alert(message)` 给用户准确缺项/实际形状原因，随后发送正式 `hanamesh-brand:rejected` CustomEvent，再抛原始错误。事件只在完成回滚后发出，detail 为 `{code,message,slot,actual?,expected?,state}`；state 包含 phase=rejected、owned 四项真实计数及独立其它贡献前后保持结果。事件是本方正式故障诊断，**不受 observer 开关控制**；不造上游终态或新权限。所有回调统一走本方幂等回滚，以防 alert/React 重入和声明回调错误留下其它槽位。
+品牌已有公开构建：npm ci；npm pack（release）；npm run build -- --verification后npm pack --ignore-scripts（保留刚生成的verification）；最后npm run build恢复release。两者同提交、仍仅dsh.client、default lib/client.js、Node/类型入口不变。verification=true只增加inspect/lifecycle，无global.validate；正式无observer的rejected事件、原生alert、全回滚不变。打包前创建隔离目的目录，逐文件hash和来源提交不得用旧包代替。
 
-测试版用现有构建的显式 verification 选项生成正常 tgz；正式构建消除 observer，公开配置 `verification.enabled` 默认 false。测试版 enabled=true 时仅额外提供：
+已核对一个实际观察供给缺口：固定SDK `packages/client/modules/src/client/entries.ts:167–174` 用 `loader.create({name:id})` 创建浏览器行，公开boot graph字段不传Host配置。因此不能向PM索要“把Host verification.enabled自动传入浏览器”的不存在操作。本方锁题后将**verification构建入口**薄封装为正常导出的apply(ctx)调用同一公开品牌apply(ctx,{verification:{enabled:true}})，保持原name/inject和全部实现；正式release入口/默认false/无observer不动，不重做1bcadd1正式拒绝/回滚，不用私有Context或global触发。本轮只交此测试构建需求、不提前改builder或生产源码。现有--verification只编入观察代码，尚不足以声称默认真实装载已启用观察面。
 
-- `window.hanameshBrandVerification.inspect()`：JSON-safe 当前 phase、`compatibilityCheck`（pending/passed）、真实 snapshot 的 declarations(type/name/kind/scope/declaredBy)、owned(slots/dictionaries/themeLayers/waits)、locale/getLocale().active、brandHeadline（locale.bind 当前语言读回）、otherContributionsPreserved。等待首次检查时四个 inject，成功后三个；observer 不改语言、主题或装配。
-- `hanamesh-brand:lifecycle` DOM CustomEvent：等待/声明/撤回/重声明及正常卸载真实快照；disposed/rejected 只在完成自身释放后发送。global 随本插件释放，测试 listener/CDP binding 由测试释放。
-- **删除拟议的 global.validate**：观察面没有执行兼容校验或改变装配的权限；产品验证只用正常禁用/重新启用按钮使正式组件真实 commit，从同一正式错误事件/原生 dialog 观察拒绝。
-- 具名 `BRAND_SLOT_MISSING`、`BRAND_SLOT_INCOMPATIBLE`：准确 slot/message/actual/expected；注册/主题错误保持同一 cause。
+固定上游已公开：
 
-这些是本模块的新增提案，尚未实现/发布。实现阶段只追加本方类型/文档；测试判题不依赖私有 root Context、模块表、手造 __DSH_BOOT__ 或 mock renderer。
+- docs/cli-help.md:62–79：`dsh plugin --profile <name> <pnpm-args>` 正常安装接口。服务包装必须从**自己准备的bundled Node/CLI/pnpm**调用，并在同一调用显式隔离HOME/DSH_HOME到本次环境；profile名从真实Desktop包装供给获得。严格安装模式/输出及真实resolved均采证，不虚构profile名。
+- packages/boot/plugin-manager/README.md:40、69–75：正常bundle/组件toggle、DSH peer校验、incompatible-version及恢复语义；豁免是风险授权，不能拿来通过本卡。
+- packages/client/ui-plugin-manager/README.md与src/client/PluginManagerPage.tsx:216–234：Plugins页提供bundle/行switch，但readOnlyReason或无entryId会禁用。locales.ts:51、57、267、273给出“启用组件 {name} / Enable component {name}”等真实标签。输入动作由真实可见行及当前语言生成，缺按钮/锁定就报准确原因，不索要虚构“disable-slot”控件。
+- packaging/README.md公开 `node packaging/rebrand.mjs DEST`、`node packaging/package.mjs DEST target --prepare-only` 包装入口；文档明确该层尚不安装种子。现有 `pnpm run start:desktop` 是真实启动命令，但本卡不执行服务启停。
 
-## PM 产品环境输入格式
+仍缺的**包装层接入**一次列全：①将正常品牌两产物及负例包装入本次Desktop所用真实profile并留严格安装/恢复证据；②给可编辑行的正常UI路径、设置浅/深及en/zh、展开侧栏/空会话路径；③实际provider启禁用可供性（尤其readonly行）及声明撤回/恢复；④在已装配自有窗口选择target，生成本文schema2；⑤ready核真实界面/装载而非CDP页计数。这些调用由PM复用既有Desktop装配卡提供的**已实现**包装入口后接入environment，不反向等待其最终验收，不创造新环境卡/新权限/私有Context。当前未见这些新增调用，不能给不存在的prepare/start/ready包装方法起假名字。本轮仅记录剩余接口，不宣称输入已生成。
 
-仅使用 SEGFLOW_ENV_DIR/SEGFLOW_PORT_CLIENT。PM 将正常安装/配置输入描述放在 `$SEGFLOW_ENV_DIR/hanamesh-brand-inputs.json`，不是观察结果、通过收据或模拟 DOM：
+## 正常声明FIXTURE：自己拥有，不能冒充真实provider
 
-```
+解锁的negative-declarer.client.mjs改为正常附属包：只在公开增量shell.overlay显示自己的select/declare/withdraw控件；声明也由独立shell.overlay entry持有，用它自己的disposer撤回。**不再争夺/影子注册root**，不释放他方注册，不mount假应用，不改上游，不调用品牌validate或暴露Context。
+
+mode：compatible、missing:sidebar.brand.mark、missing:sidebar.brand.name、missing:conversation.hero.brand.mark、kind、scope。缺项只省该项；形状错只把hero变为chain/root或single/session；其它声明single/root。原真实声明者须先经正常产品配置退出，保留真实AppFrame；若冲突，公开register原错误显示在fixture alert，不能静默更换peer或patch registry。仅负例/生命周期声明供给由FIXTURE承载，正常兼容/外观正证据必须来自真实原provider。
+
+公开fixture UI：combobox“Brand fixture mode”选mode；button“Brand fixture: declare / withdraw”；output“Brand fixture declaration status”和“Brand fixture declarations”（直接读真实snapshot，不造声明回执）。选择器只在withdrawn时可改，声明期间正常撤回/再次声明，不用timer/无限Promise。浏览器共享React由宿主提供；本方打包需external React。
+
+文件导出packageInputs给本方producer：正常manifest（仅fixture renderer peer=真实SDK0.2.1-alpha.2，不改品牌peer）、client工厂/React external、dsh.bundle.patch、cordis.patch.yml插入可寻址fixture行、无业务逻辑Host元数据face。锁题后同步本方fixture producer消费该输入；**本轮不改生产打包脚本**。交审同时用现有esbuild显式external:react生成运行目录隔离fixture tgz，记录SOURCE hash和完整文件清单；这是可安装测试输入，不是安装成功收据。初始mode默认compatible可公开配置；每场景用真实select切换，不要求宿主凭空有测试按钮。
+
+## 输入schema2与真实观察
+
+文件仍只能是 `$SEGFLOW_ENV_DIR/hanamesh-brand-inputs.json`，端口仍SEGFLOW_PORT_CLIENT。不改读取路径、不接其它CDP页。PM正常供给生成：
+
+```json
 {
-  "schema": 1,
-  "upstreamTag": "dsh-v0.2.0-rc.2",
-  "upstreamSha": "639ed015397290b3745d163aafe02ffee4aa3f84",
-  "installedPackageDir": "<本次环境中的正常已装候选目录>",
-  "artifact": {"sourceSha": "<本版main提交>", "tarball": "<正常安装的同一个tgz>", "sha256": "<tgz hash>",
-    "files": {"lib/client.js": "<hash>", "lib/client/index.js": "<hash>", "lib/client/index.d.ts": "<hash>", "lib/client/Brand.js": "<hash>", "lib/client/Brand.d.ts": "<hash>"}},
-  "peerPackageDirs": {"<五个正式peer全名>": "<正常resolved目录>"},
-  "release": {"installedPackageDir": "<正常正式构建且verification关闭的目录>",
-    "artifact": {"sourceSha": "<同一提交>", "tarball": "<release tgz>", "sha256": "<hash>", "files": {"<同上五文件>": "<hash>"}},
-    "peerPackageDirs": {"<五peer全名>": "<release正常resolved目录>"}},
-  "diagnosticBudgets": {"cdpConnectMs": 30000, "uiOperationMs": 30000,
-    "lifecycleSignalMs": 15000, "productCaseMs": 120000, "teardownMs": 5000},
-  "cases": {"<下表case>": {
-    "release": false,
-    "targetId": "<程序选择的自有Desktop主窗口target>",
-    "ready": "<该正常页面已装配的可见产品表面CSS选择器>",
-    "bundleUrls": {"hanamesh-brand": "<实际default加载URL>", "<五peer全名>": "<实际正常加载URL>"},
-    "locators": {"sidebar.brand.mark": "<正常UI位置>", "sidebar.brand.name": "<正常UI位置>",
-      "conversation.hero.brand.mark": "<正常UI位置>", "themeRoot": "<实际主题承载元素>"},
-    "preservedControls": ["<原欢迎控件>", "<原侧栏控件>"],
-    "actions": [{"role": "<正常UI角色>", "name": "<公开可访问名称>"}],
-    "palette": "light|dark",
-    "originalColor": "<按固定官方/既有其它层给出的原色预期>",
-    "originalText": {"<三槽位>": "<卸载后原内容预期>"}
-  }}
+  "schema": 2,
+  "sdkReference": {"tag": "dsh-v0.2.0-rc.2", "sha": "639ed015397290b3745d163aafe02ffee4aa3f84"},
+  "host": {"upstreamSha": "d743267388641bc76f17c45ce8b4c231aed1d32c",
+    "checkoutDir": "<本次真实fork检出>", "forkCommit": "<该检出HEAD>",
+    "packageDirs": {"desktop": "<实际包目录>", "dsh": "<实际包目录>", "cordis": "<实际包目录>", "pnpm": "<实际bundled包目录>"}},
+  "installedPackageDir": "<正常verification已装目录>",
+  "artifact": {"sourceSha": "<本版main>", "tarball": "<同次正常tgz>", "sha256": "<hash>", "files": {"<五lib文件>": "<hash>"}},
+  "installation": {"peerMode": "strict", "runtimeVersion": "0.2.1-alpha.2", "exitCode": 0,
+    "argv": ["<实际bundled命令>", "plugin", "--profile", "<实际profile>", "add", "<实际tgz>", "--strict-peer-dependencies"], "versionExemptions": [],
+    "log": "<实际严格安装输出>", "logSha256": "<hash>"},
+  "peerPackageDirs": {"<五peer全名>": "<实际resolved目录>"},
+  "resolved": {"<五peer全名>": {"version": "<实读版本，非指定结果>", "manifestSha256": "<实际manifest hash>"}},
+  "release": {"installedPackageDir": "<release正常已装目录>", "artifact": "<同上对象>",
+    "installation": "<同上对象>", "peerPackageDirs": "<同上对象>", "resolved": "<同上对象>"},
+  "cases": {"<13场景名>": {"targetId": "<正常实际主窗target>", "release": false,
+    "setup": [], "baseline": {"disable": [], "restore": []},
+    "actions": [], "restoreProviders": [], "reset": [], "palette": "light"}}
 }
 ```
 
-没有额外服务端口/权限；上述文件是本方公开测试输入，不冒称对端已有合约。输入描述必须对应正常安装的真实实例；PM 可用原生已公开 UI/配置准备和选择实例。本卡不写用户 profile，不通过 CDP 执行安装、伪造 boot、替换上游实现或投放 fake page。
+尖括号是结构说明，不能填伪造实装事实；安装不兼容时保存真实exit/诊断/恢复日志，before hook应具名拒绝并交PM，不把exitCode写0。所有实装目录/tgz/log属于本次环境。host用真实manifest版本、fork HEAD/基线祖先与packaging/upstream.sha交叉校验；peer声明与真实resolved分别读，不要求把alpha.2谎填成rc.2。
 
-| case | 正常输入/动作及预期 |
+动作只接受真实正常UI：`{role,name}` click；`{role,name,checked}`确定switch/checkbox/radio状态；`{role:"combobox",name,select}`正常selectOption。源码有出处也仍须页面上唯一、可见、可操作；locked标题一并报错。禁止执行shell/任意JS/私有loader、改profile文件或强造slot/DOM。setup/reset是正常用户操作序列，不能是通过结果；每场景重新建立状态并finally按正常操作reset，失败保留主错/收尾错。
+
+不再要求PM提供“原色/原文字/假控制selector/bundleUrls”：测试从正常active品牌的可见H（24/34px）和HanaMesh name找到**实际宿主容器**、正常新会话/收侧栏按钮，使用真实DOM路径；正常禁用品牌后在同一客户端读原色/原内容，再恢复。侧栏必须展开、无会话hero可见；否则明确报实际界面不符，不伪造ready。延迟场景waiting时先看实际inspect，恢复后再定位。页面仍限明确target与dsh-app://app/，去boot且实际正常模块/品牌观察可核，绝非仅CDP page。
+
+正式加载读**现有公开**window.__DSH_BOOT__ entries/batches（只读，不手造），用Debugger已执行single/combo脚本核品牌及五peer实际default。固定SDK公开组合传输只替换source-map trailer；核其余完整factory字节，记录原lib hash与匹配执行体hash，不再把整个combo误要求等于单个lib。这里不用私有Context/模块表，更不加载替代页面。
+
+## 十三场景setup/reset与不可绕过断言
+
+| case | 正常前置 / 测试动作 / 恢复 |
 |---|---|
-| light / dark | 正常已装、三个真实声明 active，分别用公开设置en/zh，按实际设置呈现 H/HanaMesh/H、#7059e8/#a99aff，原欢迎/侧栏控件可见 |
-| unload | 从正常 active 开始，PM 指定正常禁用 UI 操作；等待真实 disposed 事件，零本方资源、全局观察面移除、实际外观/原色恢复 |
-| missing:sidebar.brand.mark / missing:sidebar.brand.name / missing:conversation.hero.brand.mark | 从正常组合开始，经正常 owner 配置操作撤回指定声明；不把撤回本身判失败；再正常禁用/启用品牌，实际首次 React commit 检查当前组合；观察正式 missing 事件和原生用户错误、全清理，不调用 observer 校验 |
-| release-missing:sidebar.brand.mark / release-missing:sidebar.brand.name / release-missing:conversation.hero.brand.mark | release=true，正式 observer 消除、verification=false；开始真实正常 H/HanaMesh/H 及双色，禁用声明者后正常禁用/重新启用品牌；真实 commit 自动拒绝，准确正式故障事件/原生提示、零资源、原色/原内容还原，全程无 test global |
-| incompatible:kind / incompatible:scope | 从正常组合开始，经真实声明者的正常输入得到 hero 的 chain/session 形状；本方回调准确拒绝、实际原因、零残留。本卡提供test/negative-declarer.client.mjs，由现有构建工具生成正式工厂后在隔离CLIENT正常装入，config.mismatch=kind|scope及显式正priority；先正常禁用原hero声明者，root负例entry必须shadowed，绝不接管产品UI。它是具名负例FIXTURE，真实调用官方registry；不修改正式peer，不作为正式peer兼容正证据 |
-| delayed | 首次正式兼容检查已通过后，PM 正常撤回 provider 准备真实 waiting；测试经正常 UI 让其延迟再声明，回到 active、实际外观恢复、不 rejected。首次 commit 前的初始等待由 SOURCE 用例另证，不将完整页面上缺声明冒充未 commit |
-| redeclared | 初始 active，经正常 provider 撤回/重声明操作；必须先 waiting 再 active，资源无重复、不拒绝合法撤回 |
+| light / dark | 真实原providers、正常品牌已启用；公开设置分别light+en/dark+zh、展开侧栏+空会话；H/HanaMesh/H、固定双色/双语namespace、原欢迎/侧栏可见；最后恢复正常设置。正例不装fixture声明替代providers |
+| unload | 同正常active，baseline经正常禁用/恢复抓原界面；正式禁用品牌，等disposed，四资源0/global移除/原色原内容恢复，原控件仍可用；reset正常重新启用 |
+| 三missing | 先真实正常组合/baseline；正常退出原声明者，fixture选择对应missing并declare；正常重新启用品牌→真实首commit自动明确拒绝，code/slot/message、原生dialog及自身四资源0，observer无；withdraw fixture并恢复原providers，reset品牌。不能把撤回本身当最终缺项 |
+| 两incompatible | 正常组合/baseline；原声明者正常退出后fixture选择kind/scope declare；真实回调/正式首commit拒绝，保留actual/expected及原生原因，四资源0；withdraw fixture、恢复原provider，再正常reset |
+| delayed | 已真实通过首次检查，正常退出原声明者，保留同一品牌实例waiting；fixture compatible正常declare→active；不rejected，3槽/3等待；withdraw并恢复真实provider后核真实外观，reset。首commit前初始等待仍由四锁题SOURCE保留 |
+| redeclared | 首次passed；按正常操作在真实声明者与自己fixturecompatible间建立/撤回/重声明；必须waiting后active、不rejected/无重复；最后withdraw fixture并恢复真实providers再核外观，正常reset |
+| 三release-missing | 同三missing，但真实release包/verification=false/无global；首commit同样code/slot/message、原生dialog、四资源0；恢复真实providers后原色/原内容/原控件还原，不能拿观察面驱动拒绝 |
 
-所有 case 只接受同一程序 CLIENT CDP 端口的明确 target、`dsh-app://app/` 自有主页面、已装配可见表面、实际候选观察面，并用 Debugger 读**已经正常执行**的脚本源码逐字节对照已装 normal bundle。页面数量不是 ready。缺 normal 调用/装配或负例声明者输入具名报 CLIENT_ASSEMBLY，不能当品牌通过；交审阶段不要求先供应它们。
+两类原provider启禁用/readonly行若不能正常实现，所有依赖它的missing/incompatible/delayed/redeclared/release场景一次列为CLIENT_PUBLIC_OPERATION_UNAVAILABLE/LOCKED及实际原因交PM；保留全部场景与断言，不skip、不通过fake host/等待超时冒充。
 
-负例声明者的正常安装/启用输入随本卡提供，服务如何包装、装载这些正常工厂输入由PM接入；不预造已装配证据。fixture注册归实际Cordis fiber释放，测试没有另起服务。
+## 诊断预算与证据边界
 
-## 具名诊断预算与释放
-
-五项是测试诊断预算，不是安全常量，也不决定槽位是否永久缺失。可在公开 inputs.diagnosticBudgets 覆盖，默认值均保留并在 TAP 打印；只接受具名整数毫秒1..2147483647（Node计时器可表达边界），非法配置具名报 DIAGNOSTIC_BUDGET_INVALID。
-
-| 名称 | 默认ms | 范围 |
-|---|---:|---|
-| cdpConnectMs | 30000 | 唯一正常 CLIENT 的 CDP 连接；同时显式传给 Playwright |
-| uiOperationMs | 30000 | ready/执行字节读取/读回/点击/截图/观察订阅安装及 dialog；显式设置 locator/navigation 默认和 click/screenshot 参数，外层同名预算保护 evaluate/CDP RPC |
-| lifecycleSignalMs | 15000 | 真实完成事件等待，包括缺信号；缓冲已到达信号，取消清 waiter/listener，不用无限 Promise |
-| productCaseMs | 120000 | 每个完整产品用例（含 page 识别到证据），根取消向子操作传播 |
-| teardownMs | 5000 | 测试 DOM listener、Runtime binding/会话、CDP transport 及被取消用例收尾；不停止 CLIENT |
-
-耗尽报 DIAGNOSTIC_UNFINISHED、准确预算名/毫秒/阶段/target/url/最后真实快照及原始cause（若Playwright先报TimeoutError），写 unfinished-*.json。只说明信号/装配未完成，不改为 BRAND_SLOT_MISSING、不重试或延长预算修复。正常结束/错误/中断均 clearTimer/解除 abort listener；完成等待及订阅都在 finally 释放；失败断开测试 CDP 使在途 RPC 结束，收尾也有预算，保留原错和收尾错。Runtime.addBinding/removeBinding 是公开 CDP，绑定只转发事件，不触发正式行为。若页面已经失去响应而无法确认远端 listener 删除，具名 OBSERVATION_RELEASE_FAILED 保留现场，不能宣称零残留或通过。
-
-SOURCE 单测覆盖缺信号、父取消、正常结束、原错保存、配置错误和 Playwright 显式超时具名映射；其 green 仅证明测试诊断工具，不证明品牌能力或产品 UI。13个产品case不在交审卡命令运行，真实产品结果仍待程序 main 后验证。
+diagnosticBudgets仍公开可配：cdpConnectMs=30000、uiOperationMs=30000、lifecycleSignalMs=15000、productCaseMs=120000、teardownMs=5000。五名称/默认、1..2147483647计时器表达范围、显式Playwright timeout、取消时waiter/timer/DOM/CDP释放均保留；reset也用具名收尾预算。耗尽只报DIAGNOSTIC_UNFINISHED/现场/原cause，不判永久缺项或加时重试。SOURCE检查和夹具构建只记其层级；交审不跑真实PRODUCT、不以缺环境造RED；main后由程序按PM实际供给跑固定verify与owner门。
