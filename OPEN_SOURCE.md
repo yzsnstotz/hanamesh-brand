@@ -25,3 +25,6 @@
 esbuild 的平台可选二进制均为 0.28.2、MIT、来自官方 npm registry，仅开发构建使用。各名称、精确 URL 与完整性见 package-lock.json 的 `@esbuild/*` 项；本机实际安装 `@esbuild/darwin-arm64`。这些平台候选及构建工具均不进入发行文件清单。
 
 Brand.ts 依据旧 HanaMesh fork 的 H 标实现迁出，参考 deepseek-ai/deepseek-harness 的品牌槽位注册写法（MIT）。
+
+
+D-79 开发验证驱动追加：playwright-core **1.56.0**，Apache-2.0，来源 https://registry.npmjs.org/playwright-core/-/playwright-core-1.56.0.tgz。仅独立产品验证与隔离 PACKAGE/API 浏览器驱动，精确版本及完整性在 package-lock.json；不下载浏览器、不调用服务启停、不进入品牌 tgz 或客户端依赖注入。正式框架/React/五peer许可与使用方式不变。

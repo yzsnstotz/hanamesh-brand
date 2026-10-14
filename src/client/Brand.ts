@@ -1,4 +1,4 @@
-import {createElement} from 'react';
+import {createElement, useLayoutEffect, useRef} from 'react';
 
 /** Presentation supplied by both sidebar and conversation hero hosts. */
 export interface BrandMarkProps {size: number; className?: string}
@@ -14,3 +14,16 @@ export function HanaMeshMark({size, className}: BrandMarkProps) {
 }
 
 export function HanaMeshName() { return createElement('span', null, 'HanaMesh'); }
+
+/** Null-rendering component: the normal AppFrame commit is the check boundary. */
+function FirstCommit({onCommit}: {onCommit: () => void}) {
+  const committed = useRef(false);
+  useLayoutEffect(() => {
+    if (!committed.current) { committed.current = true; onCommit(); }
+  }, [onCommit]);
+  return null;
+}
+/** Build a normal React element without running hooks in a registry callback. */
+export function HanaMeshCompatibilityCheckpoint(onCommit: () => void) {
+  return createElement(FirstCommit, {onCommit});
+}
