@@ -136,7 +136,7 @@ test.before(async () => {
       const dir = await contained(candidate.peerPackageDirs[peer]);
       const actual = JSON.parse(await readFile(join(dir, 'package.json'), 'utf8'));
       assert.equal(actual.name, peer);
-      assert.equal(pkg.peerDependencies[peer], '0.2.0-rc.2', 'retained plugin declaration; not the runtime identity');
+      assert.equal(pkg.peerDependencies[peer], '0.2.1-alpha.2', 'target-aligned plugin declaration; runtime identity checked separately');
       assert.equal(actual.version, candidate.resolved[peer].version, 'read real installed resolved version');
       assert.equal(hash(await readFile(join(dir, 'package.json'))), candidate.resolved[peer].manifestSha256);
       candidate.peerPackageDirs[peer] = dir;

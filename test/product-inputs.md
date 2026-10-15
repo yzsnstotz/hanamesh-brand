@@ -6,7 +6,7 @@
 
 实际目标：上游 `d743267388641bc76f17c45ce8b4c231aed1d32c`，Desktop与DSH `0.2.1-alpha.2`，宿主Cordis `4.0.5-alpha.1`，bundled pnpm `11.28.5`。来源为固定提交的package.json:2–8、apps/desktop/package.json:2–4、apps/cli/package.json:2–4、vendor/cordis/package.json:2–4；fork公开packaging/upstream.sha及HANAMESH-FORK.md标识基线。只读源码证据归档在本卡运行目录 evidence/q220-upstream，manifest有来源SHA/路径/hash。
 
-旧 `dsh-v0.2.0-rc.2 / 639ed015397290b3745d163aafe02ffee4aa3f84` 仅为已完成PACKAGE/API的SDK参考，绝不填写为实际Desktop身份。插件五peer声明仍0.2.0-rc.2、Cordis仍4.0.4；与宿主实装resolved、宿主自有Cordis分开记录。不能推算“版本不同所以升级”，也不能装旧宿主、加override/legacy-peer-deps/force、版本豁免或偷补包。必须正常严格安装；真实 `incompatible-version`/unsatisfied peers及回滚结果才是给PM的兼容处置依据，失败时十三场景不跳过、更不能整体通过。
+旧 `dsh-v0.2.0-rc.2 / 639ed015397290b3745d163aafe02ffee4aa3f84` 仅为已完成PACKAGE/API的SDK参考，绝不填写为实际Desktop身份。本轮插件五peer声明为0.2.1-alpha.2、Cordis为4.0.5-alpha.1；与宿主实装resolved、宿主自有Cordis分开记录。不能推算“版本不同所以升级”，也不能装旧宿主、加override/legacy-peer-deps/force、版本豁免或偷补包。必须正常严格安装；真实 `incompatible-version`/unsatisfied peers及回滚结果才是给PM的兼容处置依据，失败时十三场景不跳过、更不能整体通过。
 
 ## 本方正常供给和PM接入边界
 

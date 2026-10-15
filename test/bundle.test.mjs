@@ -19,5 +19,6 @@ test('published default client entry registers one DSH closure factory with shar
   assert.equal(typeof client.apply,'function');
   assert.deepEqual(Array.from(client.inject),inject);
   assert.deepEqual(requests,['react']);
-  assert.deepEqual(Object.keys(pkg.dsh),['client']);
+  assert.deepEqual(Object.keys(pkg.dsh),['client','bundle']);
+  assert.equal(pkg.dsh.bundle.patch,'./cordis.patch.yml');
 });

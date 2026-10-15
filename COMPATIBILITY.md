@@ -1,46 +1,35 @@
-# Q61：J1S2-BRAND-02 固定正式线复核
+# 当前目标兼容性：DSH 0.2.1-alpha.2
 
-2026-10-11 开工 main：`28bad26949523d0aee0d76e09bfdea150e5241bc`，已 fetch 核对 origin/main。固定 npm 正式默认线 `@deepseek-ai/dsh@0.2.0-rc.2`；当时 latest/next 都指向该版本，alpha 为另一路，不消费。正式精确 git tag 为 `dsh-v0.2.0-rc.2`，SHA `639ed015397290b3745d163aafe02ffee4aa3f84`，来源 [deepseek-ai/deepseek-harness](https://github.com/deepseek-ai/deepseek-harness/tree/639ed015397290b3745d163aafe02ffee4aa3f84)。npm 实际 bytes 以 registry URL / integrity / 干净消费者 lock 为准；git tag 用于固定源码合约对照，不把源码编译结果冒充 npm 包。
+2026-10-15，本轮适配目标为 HanaMesh Desktop 所用 DSH `0.2.1-alpha.2`、Cordis `4.0.5-alpha.1`。`package.json` 的五个 DSH peer 精确对齐 `0.2.1-alpha.2`，Cordis 精确对齐 `4.0.5-alpha.1`，React 保持 `18.3.1`。`package-lock.json` 保存正常严格 npm 安装得到的 registry URL、完整性和间接依赖版本；没有 override、legacy-peer-deps、force 或版本豁免。
 
-## 五项 peer 的保留理由
+## 上游协议与最小适配
 
-| peer | manifest 固定值 | 默认 web profile / 干净消费者 resolved | 实际公开 API 核验与处置 |
-| --- | --- | --- | --- |
-| @deepseek-ai/dsh-client-ui-renderer | 0.2.0-rc.2 | 0.2.0-rc.2 | 正式 SlotRegistry 的 inject/register/entriesOfSlot，声明消失及重建、Cordis fiber 卸载；兼容，保留 |
-| @deepseek-ai/dsh-client-ui-sidebar | 0.2.0-rc.2 | 0.2.0-rc.2 | 正式包 factory 能由真实 ClientModuleSystem materialize；源码及发布类型公开 sidebar.brand.mark/name，mark owner 的 size 与 className 保持；兼容，保留 |
-| @deepseek-ai/dsh-client-ui-conversation | 0.2.0-rc.2 | 0.2.0-rc.2 | 正式包 factory 能 materialize；源码及发布类型公开 conversation.hero.brand.mark，owner 为 size/className；独立品牌 namespace 不覆盖 conversation 原字典；兼容，保留 |
-| @deepseek-ai/dsh-client-locale | 0.2.0-rc.2 | 0.2.0-rc.2 | 正式 LocaleRuntime register 的双语形式、bind、setLocale、注销；兼容，保留 |
-| @deepseek-ai/dsh-client-ui-theme | 0.2.0-rc.2 | 0.2.0-rc.2 | 正式 ThemeRuntime overrideTokens 两种模式、保留其他层、撤回自己的层；兼容，保留 |
+上游源码来自相邻 `hanamesh-desktop` checkout，实际验证时 HEAD 为 `60efccc00c6a160bf9bddd0d137de14946a5e69a`（该 fork 的目标上游为 `d743267388641bc76f17c45ce8b4c231aed1d32c`）。此处记录源码/API 探针，不把源码探针当 npm 发布包或真实产品验收。
 
-实际 profile 通过正式 `loadProfile`、`composeEntries`、`createRuntimeResolution` 计算，home 仅为本卡运行目录的 `profile-home`。五项的 installation-scope declarer 都是正式 `@deepseek-ai/dsh-web-app/package.json`；未写用户 profile、未启动默认应用。消费者以正常 npm 安装/ci 获取正式包和本插件 tarball，无 force/legacy-peer-deps/override。Cordis 为 4.0.4，消费者 React 和正式前端共享 React 都为 18.3.1。
+- `packages/boot/app-boot/src/profile.ts` 的 `loadProfileDirectory()` 读取 `dsh.profile.bundles`，要求每个包声明 `dsh.bundle.patch`，否则将它加入 `skippedBundles`。原品牌包缺此声明，已由新探针先失败复现。
+- 本包新增 `dsh.bundle.patch: ./cordis.patch.yml`；patch 只插入一条 `id/name: hanamesh-brand`。README 给出加在已有 base/Web 层之后的 profile 清单片段，不修改打包预装或实际用户 profile。
+- `packages/client/modules/src/index.ts` 只扫描有 fiber 且启用的 Host Loader row。Loader 先导入包根，再激活插件，因此新增根导出的空 `apply()`，仅激活客户端元数据。它不提供业务服务。发布包包含对应 JS、类型和 patch。
+- `packages/client/ui-slots/src/index.ts` 对 single 槽按 `priority` 升序选首项；同一优先级重复注册报错，`order` 不控制 single 选举。上游官方品牌默认 priority 为 `0`。原品牌的 `order: 80` 仍落在 priority `0`，两种装载顺序均真实冲突。现改三个品牌槽为 `priority: -80`；保留官方 occupant，品牌卸载后恢复官方项。
+- `shell.overlay` 是 list 槽，现有兼容检查点仍使用 `order: 80`；首次 React commit 检查和已有拒绝、回滚行为保持。
 
-## 已证实的本插件发布入口不兼容与适配
+## 发行入口
 
-原 `exports["./client"].default` 是 TypeScript 直出的 ESM `lib/client/index.js`。正式 DSH 的 client-modules 读取 default 路径，以脚本载入，要求 `window.__ModuleLoader__.load({id,factory})`。原包在隔离 Chrome 中报 `Cannot use import statement outside a module`，没有注册工厂；原七项模拟宿主/Node 入口测试未覆盖此差异。新增发布入口回归先失败，修复后通过。
+浏览器 `exports["./client"].default` 仍为 `lib/client.js`，按正式 `window.__ModuleLoader__.load({id,factory})` 闭包协议注册，React 由宿主模块表提供。Node/类型入口仍为 `lib/client/index.js` / `lib/client/index.d.ts`。新增包根 `lib/index.js` / `lib/index.d.ts` 仅供 Host 元数据激活；`./cordis.patch.yml` 可正常解析。
 
-只改本插件构建：esbuild 0.28.2 生成 `lib/client.js`，遵从固定正式上游闭包工厂协议并 externalize React；default 指向该工厂。新增 node 条件保留原 `lib/client/index.js` 消费方式，原类型路径与 API 不变。`src/client/index.ts`、`Brand.ts` 均未改动；槽位、H 标、名称、文案、主题默认值及释放行为保持。Node ESM / d.ts 与浏览器工厂都是有活动消费者的生成 lib，全部保留，不按构建文件名删除。
+`npm run preflight` 核对目标 peer、bundle 声明、正式入口以及完整发布白名单。发行内容为 README、COMPATIBILITY、OPEN_SOURCE、package.json、cordis.patch.yml、客户端 JS/类型和空 Host JS/类型。源码、测试、缓存和开发驱动不进入 tgz。
 
-## 测试边界与复现
+## 本轮验证与边界
 
-- SOURCE/FIXTURE：原七项行为断言保留，新增一项发布工厂回归；test:contract 自带 build。五项 SOURCE mutation（缺侧栏名、缺首页标、错误暗色、遗漏卸载、遗漏失败回滚）必须由对应行为测试失败抓住，无 skip。
-- PACKAGE：干净消费者安装实际 tarball；公开类型消费 `test/consumer.types.ts`；固定正式默认 profile 的实际版本与 resolved；无头浏览器载入正式前端共享模块、五个正式 peer factory、正式 ClientModuleSystem、正式服务类及本插件工厂。
-- FIXTURE：浏览器通过捕获正式前端的共享模块表来停止应用装配；槽位声明者和内存 settings scope 是隔离夹具。没有执行完整 sidebar/conversation apply、没有连接后端或挂载完整产品 UI。真实 API 生命周期证据不等于真实完整组合、UI 或 owner ACCEPTED。
+- Node `24.13.1` 下正常 `npm install --ignore-scripts --strict-peer-deps` 成功，五个 peer 和 Cordis 实际 resolved 与声明一致。`--ignore-scripts` 仅隔离依赖获取；本模块构建由后续命令显式执行。
+- `npm run preflight` 包含 toolchain、类型、构建、31 个 SOURCE/FIXTURE 测试和发布清单检查。
+- `npm run test:upstream -- --upstream <目标 desktop checkout>` 直接调用目标上游的 profile loader、Host Loader、SlotRegistry 和官方品牌源码：验证品牌 bundle 不被跳过、组合只插入一条自己的 row、空 Host 入口激活成功、官方/品牌两种装载顺序、撤回/重声明、品牌卸载后官方 occupant 恢复。
+- 上游源码/API 探针不启动默认应用或任何服务，不访问用户 profile；locale/theme 使用具名隔离夹具，Node 中 CSS 是空测试资产，不渲染完整组件。已有组件测试继续覆盖字典、主题、缺槽/形状拒绝及回滚。
+- `npm pack` 产物用于独立严格安装复核；新测试和构建只读取代码仓，不读取或哈希文档仓。
 
-仓内命令见 README。完整命令、退出码、npm integrity、默认 profile 解析表、先失败后通过日志及最终 tarball 保存在 `/Users/yzliu/.cache/hanamesh-runs/J1S2-BRAND-02`。
+先失败与当前命令日志保存在 `/Users/yzliu/.cache/hanamesh-runs/stage2-brand-20261015`。完整 Desktop UI、正常插件管理界面中的安装/启用/卸载、DMG 预装以及 owner ACCEPTED 均不由这些源码/API 测试证明，本轮未执行真实产品或 owner 验收。
 
-## 当前入口逐项处置
+## 历史证据
 
-源码、原有效测试、README、OPEN_SOURCE、package/lock、tsconfig 和忽略规则仍有当前构建/发行/消费者，保留。新增脚本只服务本模块构建及门禁，测试和脚本不进入 tarball。发布清单为 README、COMPATIBILITY、OPEN_SOURCE、package.json、lib/client.js、lib/client 的两个 JS 与两个 d.ts。
+Q61 于 2026-10-11 复核 `dsh-v0.2.0-rc.2` / `639ed015397290b3745d163aafe02ffee4aa3f84`，发现原 ESM default 不能作为 DSH 浏览器脚本加载，随后新增正式闭包入口和共享 React 构建。该 rc.2 的干净消费者、默认 profile 和隔离浏览器 API 结果只属于历史版本，不能证明本轮 alpha 兼容或产品通过。
 
-`.npm-cache` 是未跟踪 npm 包缓存，不是源码且从来不在发布白名单；先移到本卡运行目录、记录并逐文件核对 hash，再清理本卡内副本。旧 `.npmrc` 先复制归档并记录来源 SHA/hash，当前设置改为 `${HOME}/.npm`，因为机器既有全局缓存指向不可写外置卷；不改全局配置、不删除源码残留来代替修正缓存位置。
-
-基线诊断 tarball 与旧 npmrc 归档保留用于失败复现；不删除历史卡报告、冻结 ABI/模板/广播禁门、当前候选或其他卡工作树/进程。旧 task/J1S2-BRAND-01 的本地与远端分支只登记保留。无生产、数据库、迁移、签名、广播、付费模型或部署动作。schema/checksum、金额、安全头、权限、AppHost provision/LICENSE、devkit 及跨模块正式端口不属于此客户端插件，未触及。
-
-
-## D-79 实现追加：正式检查与测试边界
-
-2026-10-14 的批准方案补正式 shell.overlay 首次 React commit 校验当前三槽位，不依赖测试 global。原 src 修复限本插件；五个 peer、正式 dsh-v0.2.0-rc.2/639ed015397290b3745d163aafe02ffee4aa3f84、default/Node/类型入口及原业务默认值保留。此前2026-10-11“src未改动”的描述属于当次发布修复的历史证据，本次行为追加按上面的公开源码合约适配。
-
-SOURCE 锁定31项测试覆盖缺项/形状、verification关闭的正式拒绝、全回滚/延迟错误/取消及合法等待；独立 PRODUCT 13个场景须由程序 main 后真实 CLIENT 运行。正式包移除 observer，verification包只追加只读观察；两包均使用同一正式行为，不允许观察面成为校验触发者。PACKAGE/API 隔离夹具仍不挂完整应用，无法代替完整产品或 owner 验收。完整命令与本版消费者resolved/包字节证据位于本卡运行目录 REPORT.md；不以历史成功代替本轮复核。
-
-D-82 产物供给修正：verification 浏览器入口以同一公开 apply 显式启用只读观察，不再依赖固定宿主未提供的 Host 配置转发；正式 release 及 Node/类型入口保持。负例 producer 消费已审 fixture 清单并 external React，正常 bundle patch/元数据入口随 fixture 发布，不进入品牌包。目标宿主仍为 d743267388641bc76f17c45ce8b4c231aed1d32c（Desktop/DSH 0.2.1-alpha.2、Cordis 4.0.5-alpha.1、pnpm11.28.5）；此前 rc.2 SDK/默认 profile 证据仅是隔离参考。五个品牌 peer 保留，实际固定宿主严格安装/resolved/API 和真实产品结果由程序正常安装后采证，版本号差异本身不是不兼容证明。
+D-79/D-82 的正式首次 commit 检查、观察构建、负例 fixture 和独立产品验证接口保留。本轮只同步其 peer 声明断言及文字，不扩展旧验收机制。观察构建仍无 validate 触发入口；首页标题仍由打包层负责，本品牌 namespace 不覆盖 conversation 字典。

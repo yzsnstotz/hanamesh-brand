@@ -43,7 +43,7 @@ test('registers all three named brand slots and unloads all contributions', () =
   assert.deepEqual(inject, ['slots', 'locale', 'theme']);
   assert.deepEqual([...h.entries.keys()], slots);
   for (const {spec} of h.entries.values()) {
-    assert.equal(spec.id, 'hanamesh-brand'); assert.equal(spec.label, 'HanaMesh'); assert.equal(spec.order, 80);
+    assert.equal(spec.id, 'hanamesh-brand'); assert.equal(spec.label, 'HanaMesh'); assert.equal(spec.priority, -80); assert.equal(spec.order, undefined);
   }
   assert.equal(h.entries.get(slots[0]).component, HanaMeshMark);
   assert.equal(h.entries.get(slots[1]).component, HanaMeshName);
@@ -86,11 +86,11 @@ test('setup failure rolls back earlier contributions and preserves the cause', (
   assert.throws(() => apply(h.ctx), error => error === cause);
   assert.equal(h.dicts.size + h.layers.size + h.entries.size + h.waits.size, 0);
 });
-test('distribution declares only a client and pins upstream dependencies', async () => {
+test('distribution declares client presentation, a profile bundle, and target peers', async () => {
   const {readFile} = await import('node:fs/promises');
   const pkg = JSON.parse(await readFile(new URL('../package.json', import.meta.url), 'utf8'));
-  assert.deepEqual(Object.keys(pkg.dsh), ['client']);
-  assert.equal(pkg.peerDependencies['@deepseek-ai/dsh-client-ui-sidebar'], '0.2.0-rc.2');
+  assert.deepEqual(Object.keys(pkg.dsh), ['client', 'bundle']);
+  assert.equal(pkg.peerDependencies['@deepseek-ai/dsh-client-ui-sidebar'], '0.2.1-alpha.2');
   assert.ok(pkg.dsh.client.inject.includes('@deepseek-ai/dsh-client-locale'));
   assert.ok(pkg.dsh.client.inject.includes('@deepseek-ai/dsh-client-ui-theme'));
   const client = await import('hanamesh-brand/client');

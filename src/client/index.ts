@@ -9,7 +9,7 @@ export interface CompositionNode {
 export interface ClientContext {
   slots: {
     inject(name: string, run: () => Dispose): Dispose;
-    register(spec: {name: string; id: string; order: number; label: string}, component: unknown): Dispose;
+    register(spec: {name: string; id: string; order?: number; priority?: number; label: string}, component: unknown): Dispose;
     // Optional for existing structural Node callers; the formal check requires it.
     snapshot?(): readonly CompositionNode[];
   };
@@ -235,7 +235,8 @@ export function apply(ctx: ClientContext, config: BrandConfig = DEFAULT_BRAND_CO
           try {
             checkShape(slot, declarations(ctx), false);
             return own('slots', () => ctx.slots.register({
-              name: slot, id: 'hanamesh-brand', order: 80, label: 'HanaMesh',
+              // Single slots elect by priority (lowest wins); order is list-only.
+              name: slot, id: 'hanamesh-brand', priority: -80, label: 'HanaMesh',
             }, component));
           } catch (error) { return reject(error); }
         }));

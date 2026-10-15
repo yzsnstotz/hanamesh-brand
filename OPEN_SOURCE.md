@@ -1,17 +1,17 @@
 # 开源依赖
 
-版本和完整性以 package-lock.json 为准。Q61 复核固定正式 npm 默认线 `@deepseek-ai/dsh@0.2.0-rc.2`，对照上游精确 tag `dsh-v0.2.0-rc.2`（639ed015397290b3745d163aafe02ffee4aa3f84）；五个客户端 peer 保留 `0.2.0-rc.2`。不以 master 或 alpha 版本替代该固定基线。证据边界见 COMPATIBILITY.md。
+当前版本和完整性以 package-lock.json 为准：五个 DSH 客户端 peer 为 `0.2.1-alpha.2`，Cordis 为 `4.0.5-alpha.1`，与本轮目标 Desktop 对齐。此前 Q61 的 rc.2 是历史验证基线；本轮证据边界见 COMPATIBILITY.md。
 
 | 名称 | 版本 | 协议 | 来源 | 用途 |
 | --- | --- | --- | --- | --- |
-| @deepseek-ai/cordis | 4.0.4 | MIT | https://registry.npmjs.org/@deepseek-ai/cordis/-/cordis-4.0.4.tgz | 插件运行时 |
-| @deepseek-ai/cosmokit | 1.8.5 | MIT | https://registry.npmjs.org/@deepseek-ai/cosmokit/-/cosmokit-1.8.5.tgz | 构建或间接依赖 |
-| @deepseek-ai/dsh-client-locale | 0.2.0-rc.2 | MIT | https://registry.npmjs.org/@deepseek-ai/dsh-client-locale/-/dsh-client-locale-0.2.0-rc.2.tgz | 上游客户端服务依赖 |
-| @deepseek-ai/dsh-client-ui-conversation | 0.2.0-rc.2 | MIT | https://registry.npmjs.org/@deepseek-ai/dsh-client-ui-conversation/-/dsh-client-ui-conversation-0.2.0-rc.2.tgz | 上游客户端服务依赖 |
-| @deepseek-ai/dsh-client-ui-renderer | 0.2.0-rc.2 | MIT | https://registry.npmjs.org/@deepseek-ai/dsh-client-ui-renderer/-/dsh-client-ui-renderer-0.2.0-rc.2.tgz | 上游客户端服务依赖 |
-| @deepseek-ai/dsh-client-ui-sidebar | 0.2.0-rc.2 | MIT | https://registry.npmjs.org/@deepseek-ai/dsh-client-ui-sidebar/-/dsh-client-ui-sidebar-0.2.0-rc.2.tgz | 上游客户端服务依赖 |
-| @deepseek-ai/dsh-client-ui-theme | 0.2.0-rc.2 | MIT | https://registry.npmjs.org/@deepseek-ai/dsh-client-ui-theme/-/dsh-client-ui-theme-0.2.0-rc.2.tgz | 上游客户端服务依赖 |
-| @deepseek-ai/schemastery | 3.18.4 | MIT | https://registry.npmjs.org/@deepseek-ai/schemastery/-/schemastery-3.18.4.tgz | 构建或间接依赖 |
+| @deepseek-ai/cordis | 4.0.5-alpha.1 | MIT | https://registry.npmjs.org/@deepseek-ai/cordis/-/cordis-4.0.5-alpha.1.tgz | 插件运行时 |
+| @deepseek-ai/cosmokit | 1.8.6-alpha.2 | MIT | https://registry.npmjs.org/@deepseek-ai/cosmokit/-/cosmokit-1.8.6-alpha.2.tgz | 构建或间接依赖 |
+| @deepseek-ai/dsh-client-locale | 0.2.1-alpha.2 | MIT | https://registry.npmjs.org/@deepseek-ai/dsh-client-locale/-/dsh-client-locale-0.2.1-alpha.2.tgz | 上游客户端服务依赖 |
+| @deepseek-ai/dsh-client-ui-conversation | 0.2.1-alpha.2 | MIT | https://registry.npmjs.org/@deepseek-ai/dsh-client-ui-conversation/-/dsh-client-ui-conversation-0.2.1-alpha.2.tgz | 上游客户端服务依赖 |
+| @deepseek-ai/dsh-client-ui-renderer | 0.2.1-alpha.2 | MIT | https://registry.npmjs.org/@deepseek-ai/dsh-client-ui-renderer/-/dsh-client-ui-renderer-0.2.1-alpha.2.tgz | 上游客户端服务依赖 |
+| @deepseek-ai/dsh-client-ui-sidebar | 0.2.1-alpha.2 | MIT | https://registry.npmjs.org/@deepseek-ai/dsh-client-ui-sidebar/-/dsh-client-ui-sidebar-0.2.1-alpha.2.tgz | 上游客户端服务依赖 |
+| @deepseek-ai/dsh-client-ui-theme | 0.2.1-alpha.2 | MIT | https://registry.npmjs.org/@deepseek-ai/dsh-client-ui-theme/-/dsh-client-ui-theme-0.2.1-alpha.2.tgz | 上游客户端服务依赖 |
+| @deepseek-ai/schemastery | 3.18.5-alpha.2 | MIT | https://registry.npmjs.org/@deepseek-ai/schemastery/-/schemastery-3.18.5-alpha.2.tgz | 构建或间接依赖 |
 | @standard-schema/spec | 1.1.0 | MIT | https://registry.npmjs.org/@standard-schema/spec/-/spec-1.1.0.tgz | 构建或间接依赖 |
 | @types/prop-types | 15.7.15 | MIT | https://registry.npmjs.org/@types/prop-types/-/prop-types-15.7.15.tgz | 构建或间接依赖 |
 | @types/react | 18.3.12 | MIT | https://registry.npmjs.org/@types/react/-/react-18.3.12.tgz | 构建或间接依赖 |

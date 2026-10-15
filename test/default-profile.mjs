@@ -22,7 +22,7 @@ const rows=names.map(name=>{
  const path=resolve(actual.packageDir,'package.json');
  return {name,path};
 });
-for(const row of rows){const pkg=JSON.parse(await readFile(row.path,'utf8'));row.version=pkg.version;assert.equal(row.version,'0.2.0-rc.2');}
+for(const row of rows){const pkg=JSON.parse(await readFile(row.path,'utf8'));row.version=pkg.version;assert.equal(row.version,'0.2.1-alpha.2');}
 const record={anchor,home,profileDir:profile.dir,layers:profile.layers.map(l=>({packageName:l.packageName,patchPaths:l.patchPaths})),rows,runtime:{...runtime,entries:runtime.entries.filter(e=>names.includes(e.name))}};
 await writeFile(resolve(consumer,'../evidence/default-profile.json'),JSON.stringify(record,null,2)+'\n');
 console.log(JSON.stringify(record,null,2));

@@ -1,0 +1,5 @@
+# Add this bundle after dsh-base and dsh-web-app in dsh.profile.bundles.
+# Host activation only advertises the client package; it provides no service.
+- insert:
+    - id: hanamesh-brand
+      name: hanamesh-brand
