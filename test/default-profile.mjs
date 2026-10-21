@@ -7,8 +7,10 @@ const option=process.argv.indexOf('--consumer');
 assert.ok(option>=0 && process.argv[option+1],'PROFILE_CONSUMER_REQUIRED: pass --consumer with an isolated installed consumer');
 const consumer=resolve(process.argv[option+1]);
 const require=createRequire(resolve(consumer,'package.json'));
-const {loadProfile,composeEntries,createRuntimeResolution}=await import(require.resolve('@deepseek-ai/dsh-app-boot'));
 const anchor=require.resolve('@deepseek-ai/dsh/package.json');
+// Resolve the public boot API in its declaring package's dependency scope.
+const dshRequire=createRequire(anchor);
+const {loadProfile,composeEntries,createRuntimeResolution}=await import(dshRequire.resolve('@deepseek-ai/dsh-app-boot'));
 const home=resolve(consumer,'../profile-home');
 const profile=loadProfile('dsh','web',anchor,home,{userLayer:false});
 assert.deepEqual(profile.skippedBundles,[]);

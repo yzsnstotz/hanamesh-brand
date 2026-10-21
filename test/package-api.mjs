@@ -58,7 +58,9 @@ try {
   const {Context}=window.apiSeeds['@deepseek-ai/cordis'];
   const ctx=new Context();await ctx.plugin(SlotRegistry).await();
   const locale=new LocaleRuntime(ctx);locale.setLocale('en');
-  const subscribers=new Set();let value={preference:'light',fontSize:14};
+  // FIXTURE: complete public ThemeSettings (ui-theme 0.2.1-alpha.2); no real settings.
+  const subscribers=new Set();let value={preference:'light',fontSize:14,codeFontSize:11,terminalFontSize:13,
+    textFontFamily:'',codeFontFamily:'',terminalFontFamily:''};
   // FIXTURE: isolated settings scope, with no persistence, host server or credentials.
   const scope={getSnapshot:()=>({value}),subscribe:fn=>{subscribers.add(fn);return()=>subscribers.delete(fn);},set(){throw Error('brand must not write preference');}};
   const theme=new ThemeRuntime(ctx,scope);ctx.provide('locale',locale);ctx.provide('theme',theme);
@@ -74,7 +76,7 @@ try {
   const activeColor=theme.getTheme().active.tokens['--dsw-alias-state-business-primary'];
   const english=locale.bind('hanamesh.brand')('hero.headline');locale.setLocale('zh');
   const chinese=locale.bind('hanamesh.brand')('hero.headline');
-  value={preference:'dark',fontSize:14};subscribers.forEach(fn=>fn());
+  value={...value,preference:'dark'};subscribers.forEach(fn=>fn());
   const darkColor=theme.getTheme().active.tokens['--dsw-alias-state-business-primary'];
   shell();if(keys.some(k=>ctx.slots.entries(k).length!==0))throw Error('collapse leaked brand');
   shell=declare();if(keys.some(k=>ctx.slots.entries(k).length!==1))throw Error('redeclaration lost brand');
