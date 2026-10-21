@@ -166,6 +166,7 @@ export function apply(ctx: ClientContext, config: BrandConfig = DEFAULT_BRAND_CO
       event('hanamesh-brand:rejected', {...diagnostic(), state});
     };
     const presentationRejected = (cause: unknown): never => {
+      if (cause === presentationException) throw cause;
       presentationFailure = cause;
       errorPresentation = {status: 'failed', slots: errorPresentation?.slots ?? 0, waits: errorWait ? 1 : 0};
       presentationException = new AggregateError([failure, cause],
@@ -184,7 +185,11 @@ export function apply(ctx: ClientContext, config: BrandConfig = DEFAULT_BRAND_CO
             const release = ctx.slots.register({name: checkpointSlot, id: 'hanamesh-brand:error', order: 80, label: 'HanaMesh Brand error'},
               () => HanaMeshBrandFailure({failure: diagnostic(), language: ctx.locale.getLocale?.().active ?? 'en'}));
             errorPresentation = {status: 'visible', slots: 1, waits: 1};
-            return () => { release(); errorPresentation = {status: 'waiting', slots: 0, waits: 1}; };
+            return () => {
+              try { release(); }
+              catch (cause) { presentationRejected(cause); }
+              errorPresentation = {status: 'waiting', slots: 0, waits: 1};
+            };
           } catch (cause) { return presentationRejected(cause); }
         });
       } catch (cause) {
