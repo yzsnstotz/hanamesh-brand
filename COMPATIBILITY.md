@@ -1,4 +1,10 @@
-# 当前目标兼容性：DSH 0.2.1-alpha.2
+# 当前兼容目标：DSH alpha.2 与官方 0.2.1-rc.2
+
+2026-10-21 I27：先从原签名官方 macOS arm64 0.2.1-rc.2（源码687f282e8625c6b8d11ff58211a90524be2e4317）ASAR 公开 exports 取得实际模块字节，再以现有 B04 包运行公开 SlotRegistry、LocaleRuntime、ThemeRuntime、共享 React/Cordis 生命周期探针，通过后才增加版本声明。此为 PUBLIC_API_FIXTURE PRE_ADMISSION，正常包安装与真实官方 GUI 另验，不能互相替代。
+
+运行 peer 仅有限并列五个 DSH `0.2.1-alpha.2 || 0.2.1-rc.2`、Cordis `4.0.5-alpha.1 || 4.0.5`，React 18.3.1。没有 wildcard、force、版本豁免或放开未知版本。正常 npm package-lock-only --strict-peer-deps 保留原已测 alpha 开发闭包，未漂移实际resolved版本。包括 C-PL-M01 错误面失败传播修订，B04 不覆盖宿主主色。
+
+## 历史 alpha.2 适配
 
 2026-10-15，本轮适配目标为 HanaMesh Desktop 所用 DSH `0.2.1-alpha.2`、Cordis `4.0.5-alpha.1`。`package.json` 的五个 DSH peer 精确对齐 `0.2.1-alpha.2`，Cordis 精确对齐 `4.0.5-alpha.1`，React 保持 `18.3.1`。`package-lock.json` 保存正常严格 npm 安装得到的 registry URL、完整性和间接依赖版本；没有 override、legacy-peer-deps、force 或版本豁免。
 

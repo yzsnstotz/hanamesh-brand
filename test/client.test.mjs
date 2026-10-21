@@ -82,7 +82,8 @@ test('brand mark respects host size/class and name contains HanaMesh', () => {
 });
 test('setup failure rolls back earlier contributions and preserves the cause', () => {
   const h = host(slots), cause = new Error('host rejected brand slot injection');
-  h.ctx.slots.inject = () => { throw cause; };
+  const inject = h.ctx.slots.inject;
+  h.ctx.slots.inject = (name, run) => { if(name !== 'shell.overlay') throw cause; return inject(name, run); };
   assert.throws(() => apply(h.ctx), error => error === cause);
   assert.equal(h.dicts.size + h.layers.size + h.entries.size + h.waits.size, 0);
 });
@@ -90,7 +91,7 @@ test('distribution declares client presentation, a profile bundle, and target pe
   const {readFile} = await import('node:fs/promises');
   const pkg = JSON.parse(await readFile(new URL('../package.json', import.meta.url), 'utf8'));
   assert.deepEqual(Object.keys(pkg.dsh), ['client', 'bundle']);
-  assert.equal(pkg.peerDependencies['@deepseek-ai/dsh-client-ui-sidebar'], '0.2.1-alpha.2');
+  assert.equal(pkg.peerDependencies['@deepseek-ai/dsh-client-ui-sidebar'], '0.2.1-alpha.2 || 0.2.1-rc.2');
   assert.ok(pkg.dsh.client.inject.includes('@deepseek-ai/dsh-client-locale'));
   assert.ok(pkg.dsh.client.inject.includes('@deepseek-ai/dsh-client-ui-theme'));
   const client = await import('hanamesh-brand/client');
