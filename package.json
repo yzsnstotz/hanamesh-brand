@@ -1,6 +1,6 @@
 {
   "name": "hanamesh-brand",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "HanaMesh client brand slot occupants",
   "type": "module",
   "exports": {
@@ -14,7 +14,12 @@
       "default": "./lib/client.js"
     },
     "./package.json": "./package.json",
-    "./cordis.patch.yml": "./cordis.patch.yml"
+    "./cordis.patch.yml": "./cordis.patch.yml",
+    "./assets/favicon.svg": "./assets/favicon.svg",
+    "./assets/welcome-brand.svg": "./assets/welcome-brand.svg",
+    "./assets/manifest.json": "./assets/manifest.json",
+    "./assets/source-license.txt": "./assets/source-license.txt",
+    "./ASSETS.md": "./ASSETS.md"
   },
   "files": [
     "lib/index.js",
@@ -23,7 +28,9 @@
     "lib/client",
     "lib/client.js",
     "COMPATIBILITY.md",
-    "OPEN_SOURCE.md"
+    "OPEN_SOURCE.md",
+    "assets",
+    "ASSETS.md"
   ],
   "scripts": {
     "test": "node --experimental-strip-types --test test/*.test.mjs",

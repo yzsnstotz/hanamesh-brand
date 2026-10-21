@@ -22,7 +22,7 @@
 
 浏览器 `exports["./client"].default` 仍为 `lib/client.js`，按正式 `window.__ModuleLoader__.load({id,factory})` 闭包协议注册，React 由宿主模块表提供。Node/类型入口仍为 `lib/client/index.js` / `lib/client/index.d.ts`。新增包根 `lib/index.js` / `lib/index.d.ts` 仅供 Host 元数据激活；`./cordis.patch.yml` 可正常解析。
 
-`npm run preflight` 核对目标 peer、bundle 声明、正式入口以及完整发布白名单。发行内容为 README、COMPATIBILITY、OPEN_SOURCE、package.json、cordis.patch.yml、客户端 JS/类型和空 Host JS/类型。源码、测试、缓存和开发驱动不进入 tgz。
+`npm run preflight` 核对目标 peer、bundle 声明、正式入口以及完整发布白名单。发行内容为 README、COMPATIBILITY、OPEN_SOURCE、ASSETS、package.json、cordis.patch.yml、客户端 JS/类型、空 Host JS/类型及 assets/ 的两份静态 SVG、manifest 与来源许可原文。静态资产公开路径和许可未定项见 [ASSETS.md](ASSETS.md)；既有运行槽与组件不变。源码、测试、缓存和开发驱动不进入 tgz。
 
 ## 本轮验证与边界
 

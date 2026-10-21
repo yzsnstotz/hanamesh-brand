@@ -1,0 +1,49 @@
+{
+  "schemaVersion": 1,
+  "provenance": {
+    "repository": "https://github.com/yzsnstotz/hanamesh-desktop-electron.git",
+    "sourceCommit": "60efccc00c6a160bf9bddd0d137de14946a5e69a",
+    "observedCommit": "ab3790222c543d9cabe9c9d8fa830f91aa57dc3d",
+    "transformation": "none; byte-for-byte copy"
+  },
+  "license": {
+    "status": "unknown",
+    "spdx": null,
+    "sourceRepositoryLicense": "MIT",
+    "sourceRepositoryCopyright": "Copyright (c) 2026 DeepSeek",
+    "notice": "./assets/source-license.txt",
+    "scope": "Source repository declares MIT; no separate asset-specific or embedded-image grant was found. Brand package MIT metadata is not proof of rights to these assets."
+  },
+  "assets": [
+    {
+      "path": "assets/favicon.svg",
+      "sourcePath": "packaging/assets/favicon.svg",
+      "mediaType": "image/svg+xml",
+      "width": 512,
+      "height": 512,
+      "embeddedImage": {
+        "mediaType": "image/png",
+        "width": 512,
+        "height": 512
+      },
+      "bytes": 6256,
+      "sha256": "a502bc6cd5f95f32bbd2716a884f974f524e483c49b50798b0443adc7f232039",
+      "integrity": "sha512-MsrsFHhHCtxNTOHRSqmc2BW5eOlDYq3QLJRvJf+VnnQUEJPx1pUIJBP8m5nMsi2CiboXxGTIPfL+f6rtipOmXQ=="
+    },
+    {
+      "path": "assets/welcome-brand.svg",
+      "sourcePath": "packaging/assets/welcome-brand.svg",
+      "mediaType": "image/svg+xml",
+      "width": 472,
+      "height": 40,
+      "embeddedImage": {
+        "mediaType": "image/png",
+        "width": 512,
+        "height": 512
+      },
+      "bytes": 6430,
+      "sha256": "90d9fab4ffad1d7b1b5905b75eccce9836391cfd258a03162f74e81a805c3cf7",
+      "integrity": "sha512-egHvmGmPg6MZUAnFgClqiREHYST5lCJw7W9ddoaLOyJWTjQm1UzXYMoaGNViTwC7eEDM4mJ/n9FRPznnpQPMkg=="
+    }
+  ]
+}
