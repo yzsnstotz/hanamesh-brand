@@ -74,11 +74,10 @@ for (const [field, actual] of [['kind', 'chain'], ['scope', 'session']]) {
     h.clean(); h.unload(); h.clean();
   });
 }
-test('explicit assembled check accepts compatible slots and does not change brand defaults', () => {
+test('explicit assembled check accepts compatible slots without changing the host theme', () => {
   const h = host(); brand.apply(h.ctx); verify(h.ctx);
   assert.equal(h.entries.size, 3);
-  assert.deepEqual(h.layers.get('hanamesh-brand')['--dsw-alias-state-business-primary'],
-    {light: '#7059e8', dark: '#a99aff'});
+  assert.deepEqual([...h.layers.keys()], ['other']);
   h.unload(); h.clean();
 });
 test('waiting, collapse and redeclaration remain legal until an explicit assembled check', () => {
@@ -200,14 +199,14 @@ test('an unknown snapshot failure is retained as the exact cause and presented l
  const panel=h.entries.get('shell.overlay');assert.equal(panel?.spec.id,'hanamesh-brand:error');assert.match(JSON.stringify(panel.component({})),/SLOT_SNAPSHOT_FAILED/);
  assert.equal(cause.brandState.declarationReadError,'SLOT_SNAPSHOT_FAILED');h.unload();
 });
-test('a failed theme release remains visible and is never described as complete rollback',()=>{
+test('a failed dictionary release remains visible and is never described as complete rollback',()=>{
  const h=host(keys.filter(key=>key!==keys[1]));h.specs.set('shell.overlay',{type:'slot',name:'shell.overlay',kind:'list',scope:'root'});
- h.ctx.theme.overrideTokens=(id,value)=>{h.layers.set(id,value);return()=>{throw new Error('THEME_RELEASE_FAILED');};};
+ h.ctx.locale.register=(id,value)=>{h.dicts.set(id,value);return()=>{throw new Error('DICTIONARY_RELEASE_FAILED');};};
  brand.apply(h.ctx);assert.doesNotThrow(()=>formalCommit(h));
  const panel=h.entries.get('shell.overlay');assert.ok(panel);const rendered=JSON.stringify(panel.component({}));
- assert.equal(h.layers.has('hanamesh-brand'),true);assert.doesNotMatch(rendered,/were removed/);assert.match(rendered,/THEME_RELEASE_FAILED/);assert.match(rendered,/may still/);
- assert.throws(()=>brand.validateSlots(h.ctx),error=>error.code==='BRAND_SLOT_MISSING'&&error.cleanupError instanceof AggregateError&&error.brandState.owned.themeLayers===1);
- h.unload();h.layers.delete('hanamesh-brand');
+ assert.equal(h.dicts.has('hanamesh.brand'),true);assert.doesNotMatch(rendered,/were removed/);assert.match(rendered,/DICTIONARY_RELEASE_FAILED/);assert.match(rendered,/may still/);
+ assert.throws(()=>brand.validateSlots(h.ctx),error=>error.code==='BRAND_SLOT_MISSING'&&error.cleanupError instanceof AggregateError&&error.brandState.owned.dictionaries===1 && error.brandState.owned.themeLayers===0);
+ h.unload();h.dicts.delete('hanamesh.brand');
 });
 
 test('late incompatible declaration is local and waits honestly for the plugin error surface',()=>{

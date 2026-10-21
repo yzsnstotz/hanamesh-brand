@@ -67,10 +67,10 @@ test('registers bilingual brand copy without colliding with conversation diction
   });
   h.unload(); assert.equal(h.dicts.get('conversation').en['hero.headline'], 'Into the Unknown');
 });
-test('overrides business color in both palettes and removes only its layer', () => {
+test('preserves every pre-existing theme layer without adding a brand layer', () => {
   const h = host(slots); h.layers.set('other', {'--other': {light: 'red', dark: 'pink'}});
   apply(h.ctx);
-  assert.deepEqual(h.layers.get('hanamesh-brand')['--dsw-alias-state-business-primary'], {light: '#7059e8', dark: '#a99aff'});
+  assert.deepEqual([...h.layers], [['other', {'--other': {light: 'red', dark: 'pink'}}]]);
   h.unload(); assert.deepEqual([...h.layers.keys()], ['other']);
 });
 test('brand mark respects host size/class and name contains HanaMesh', () => {
@@ -81,8 +81,8 @@ test('brand mark respects host size/class and name contains HanaMesh', () => {
   assert.equal(HanaMeshName().props.children, 'HanaMesh');
 });
 test('setup failure rolls back earlier contributions and preserves the cause', () => {
-  const h = host(slots), cause = new Error('host theme rejected layer');
-  h.ctx.theme.overrideTokens = () => { throw cause; };
+  const h = host(slots), cause = new Error('host rejected brand slot injection');
+  h.ctx.slots.inject = () => { throw cause; };
   assert.throws(() => apply(h.ctx), error => error === cause);
   assert.equal(h.dicts.size + h.layers.size + h.entries.size + h.waits.size, 0);
 });
@@ -95,4 +95,41 @@ test('distribution declares client presentation, a profile bundle, and target pe
   assert.ok(pkg.dsh.client.inject.includes('@deepseek-ai/dsh-client-ui-theme'));
   const client = await import('hanamesh-brand/client');
   assert.deepEqual(client.inject, inject);
+});
+
+// I25/B04 SOURCE/FIXTURE: assert the actual plugin never writes the host theme.
+test('brand keeps its purple mark local without registering any global theme layer', () => {
+  const h = host(slots), writes = [];
+  h.ctx.theme.overrideTokens = (...args) => { writes.push(args); return () => {}; };
+  apply(h.ctx);
+  try {
+    assert.equal(writes.length, 0, 'Brand must not call the host global token override API');
+    assert.equal(h.layers.size, 0);
+    const mark = h.entries.get(slots[0]).component({size: 24});
+    assert.equal(mark.props.style.background, '#7059e8', 'brand color is confined to its own mark');
+  } finally { h.unload(); }
+});
+test('theme preservation includes business-primary and detects an external change instead of exempting it', () => {
+  const h = host(slots);
+  h.ctx.slots.snapshot = () => slots.map(name => ({type: 'slot', name, kind: 'single', scope: 'root'}));
+  h.ctx.locale.getLocale = () => ({active: 'en'});
+  h.ctx.locale.bind = () => () => 'original';
+  const tokens = {'--dsw-alias-state-business-primary': '#112233', '--dsw-alias-label-primary': '#121212'};
+  h.ctx.theme.getTheme = () => ({active: {colorScheme: 'light', tokens: {...tokens}}, themes: []});
+  const originalWindow = globalThis.window, originalBuildFlag = globalThis.__HANAMESH_BRAND_VERIFICATION__;
+  globalThis.window = {dispatchEvent: () => true};
+  // Existing SOURCE-only observer path, never a normal product readiness signal.
+  globalThis.__HANAMESH_BRAND_VERIFICATION__ = true;
+  try {
+    apply(h.ctx, {verification: {enabled: true}});
+    const inspect = globalThis.window.hanameshBrandVerification.inspect;
+    assert.equal(inspect().otherContributionsPreserved, true);
+    tokens['--dsw-alias-state-business-primary'] = '#778899';
+    assert.equal(inspect().otherContributionsPreserved, false, 'business-primary has no preservation exemption');
+    assert.equal(inspect().owned.themeLayers, 0);
+  } finally {
+    h.unload();
+    if (originalWindow === undefined) delete globalThis.window; else globalThis.window = originalWindow;
+    if (originalBuildFlag === undefined) delete globalThis.__HANAMESH_BRAND_VERIFICATION__; else globalThis.__HANAMESH_BRAND_VERIFICATION__ = originalBuildFlag;
+  }
 });

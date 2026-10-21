@@ -277,7 +277,16 @@ async function appearance(page, spec, palette) {
   }
   const color = await page.locator(spec.locators.themeRoot).evaluate(node =>
     getComputedStyle(node).getPropertyValue('--dsw-alias-state-business-primary').trim());
-  assert.equal(color, palette === 'light' ? '#7059e8' : '#a99aff');
+  if (lastEvidence.case === 'delayed') {
+    // Required brand slots are initially absent in this case. The observer
+    // compares every token with the real public snapshot taken before apply.
+    const state = await inspect(page);
+    assert.equal(state.owned.themeLayers, 0);
+    assert.equal(state.otherContributionsPreserved, true);
+  } else {
+    assert.equal(typeof spec.originalColor, 'string', 'normal disable/restore baseline is required');
+    assert.equal(color, spec.originalColor, 'Brand must preserve the observed original host color');
+  }
   for (const selector of spec.preservedControls) assert.ok(await page.locator(selector).isVisible(),
     'original welcome/sidebar control remains available: ' + selector);
 }); }
@@ -355,7 +364,7 @@ for (const palette of ['light', 'dark']) productTest('normal Desktop brand appea
   const {page, spec} = await pageFor(palette);
   const state = await inspect(page);
   assert.equal(state.phase, 'active');
-  assert.deepEqual(state.owned, {slots: 3, dictionaries: 1, themeLayers: 1, waits: 3});
+  assert.deepEqual(state.owned, {slots: 3, dictionaries: 1, themeLayers: 0, waits: 3});
   for (const key of slots) {
     const node = state.declarations.find(node => node.name === key);
     assert.ok(node); assert.equal(node.kind, 'single'); assert.equal(node.scope, 'root');

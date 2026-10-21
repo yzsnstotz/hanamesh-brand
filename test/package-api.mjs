@@ -90,8 +90,8 @@ try {
   return {reactVersion:window.apiSeeds.react.version,providerExports:providerNames,entries,activeColor,darkColor,english,chinese,remaining,restored,removedDictionary,originalHeadline,afterUnload,remainingSettingsSubscribers:subscribers.size};
  });
  console.log(JSON.stringify(result,null,2));
- assert.deepEqual(result.remaining,[0,0,0]);assert.equal(result.activeColor,'#7059e8');assert.equal(result.english,'HanaMesh, connect your creations');assert.equal(result.restored,'#445566');
- assert.equal(result.darkColor,'#a99aff');assert.equal(result.chinese,'HanaMesh，让创造相连');
+ assert.deepEqual(result.remaining,[0,0,0]);assert.equal(result.activeColor,'#112233');assert.equal(result.english,'HanaMesh, connect your creations');assert.equal(result.restored,'#445566');
+ assert.equal(result.darkColor,'#445566');assert.equal(result.chinese,'HanaMesh，让创造相连');
  assert.equal(result.removedDictionary,'hero.headline');assert.equal(result.originalHeadline,'探索未知');
  assert.deepEqual(result.afterUnload,[0,0,0]);assert.equal(result.remainingSettingsSubscribers,0);
  assert.deepEqual(result.entries.map(e=>e.entries.map(x=>x.child)),[['H'],['HanaMesh'],['H']]);

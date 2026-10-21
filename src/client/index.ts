@@ -19,7 +19,6 @@ export interface ClientContext {
     bind?(namespace: string): (key: string) => string;
   };
   theme: {
-    overrideTokens(source: string, tokens: Record<string, {light: string; dark: string}>): Dispose;
     getTheme?(): {active: {colorScheme: string; tokens: Record<string, string>}; themes: readonly unknown[]};
   };
   effect(run: () => Dispose, label?: string): unknown;
@@ -143,8 +142,7 @@ export function apply(ctx: ClientContext, config: BrandConfig = DEFAULT_BRAND_CO
         && theme.active.colorScheme === beforeTheme?.active.colorScheme
         && JSON.stringify(theme.themes) === beforeThemes
         && Object.keys({...beforeTokens, ...theme.active.tokens}).every(key =>
-          (owned.themeLayers > 0 && key === '--dsw-alias-state-business-primary')
-          || beforeTokens[key] === theme.active.tokens[key]);
+          beforeTokens[key] === theme.active.tokens[key]);
       return {phase: closed ? (failure === undefined ? 'disposed' : 'rejected')
         : passed && requiredSlots.every(slot => observed.some(node => node.name === slot))
           && owned.slots === 3 ? 'active' : 'waiting',
@@ -255,9 +253,7 @@ export function apply(ctx: ClientContext, config: BrandConfig = DEFAULT_BRAND_CO
         zh: {'hero.headline': 'HanaMesh，让创造相连'},
         en: {'hero.headline': 'HanaMesh, connect your creations'},
       }));
-      own('themeLayers', () => ctx.theme.overrideTokens('hanamesh-brand', {
-        '--dsw-alias-state-business-primary': {light: '#7059e8', dark: '#a99aff'},
-      }));
+      // Brand color belongs to its own mark component; host tokens are read-only.
       for (const [slot, component] of [
         ['sidebar.brand.mark', HanaMeshMark],
         ['sidebar.brand.name', HanaMeshName],

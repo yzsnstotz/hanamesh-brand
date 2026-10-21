@@ -1,9 +1,12 @@
+> I25 / B04（2026-10-21）：主色范围按编排新决定收敛为插件局部；本文之前版本的全局主题覆盖验收是历史行为，本候选不再采用。基于 B06 候选保留局部兼容错误面。
+
 # hanamesh-brand
 
 HanaMesh 的客户端品牌插件，提供 `dsh.client` 和可安装的 `dsh.bundle` profile 层。包根的空 `apply()` 仅供 Host Loader 激活元数据，没有业务服务。安装后的启用范围由 profile 的 bundle 列表决定；本仓不修改 DMG 预装、网站或用户 profile。
 
 - 注册 `sidebar.brand.mark`、`sidebar.brand.name`、`conversation.hero.brand.mark`，使用旧 fork 的紫色 H 标和 HanaMesh 名称。
-- 通过 `theme.overrideTokens()` 覆盖 business-primary，提供浅色 / 深色值；卸载移除自己的覆盖层。
+- 品牌紫色只在本插件 H 标组件自身使用；不调用 `theme.overrideTokens()`，不覆盖工作台 business-primary。宿主主题仅通过公开 getTheme 只读核验，包含 business-primary 的全部 token 无豁免；其它插件与工作台保持原样。
+- `owned.themeLayers` 保留为兼容诊断字段，当前恒为 0。
 - 在 `hanamesh.brand` namespace 注册中英文首页文案；卸载注销字典。
 - 使用声明感知的 `slots.inject()`，跟随宿主槽位声明、注销及重新声明。
 - 三个单槽使用公开 `priority: -80`，低于官方默认 `0`，不依赖安装顺序。官方 occupant 保留，品牌卸载后恢复；`order` 仅控制列表顺序。

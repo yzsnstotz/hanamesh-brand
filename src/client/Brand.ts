@@ -42,8 +42,8 @@ export function HanaMeshBrandFailure({failure, language}: {failure: BrandFailure
       background: 'var(--dsw-alias-bg-layer-2)', color: 'var(--dsw-alias-label-primary)', font: '14px/1.5 system-ui,sans-serif'},
   }, createElement('h2', {style: {fontSize: 16, margin: '0 0 8px'}}, zh ? 'HanaMesh 品牌未启用' : 'HanaMesh Brand is unavailable'),
   createElement('p', null, failure.cleanup
-    ? (zh ? '品牌兼容检查失败，部分资源未能撤回，标志或主题覆盖可能仍在生效。' : 'Brand compatibility failed. Some marks or theme overrides may still apply because cleanup did not finish.')
-    : (zh ? '品牌兼容检查失败，已撤回本插件的标志和主题覆盖；原工作台继续使用。' : 'Brand compatibility failed. Its marks and theme override were removed; the original workspace remains available.')),
+    ? (zh ? '品牌兼容检查失败，部分资源未能撤回，部分品牌内容可能仍在显示。' : 'Brand compatibility failed. Some branding may still be visible because cleanup did not finish.')
+    : (zh ? '品牌兼容检查失败，已撤回本插件的标志和文案；原工作台继续使用。' : 'Brand compatibility failed. Its marks and copy were removed; the original workspace remains available.')),
   failure.cleanup ? createElement('div', null,
     createElement('p', null, zh ? '未释放的品牌资源：' : 'Brand resources still owned:', Object.entries(failure.cleanup.remaining).map(([kind,count]) => `${resourceLabels[kind as keyof typeof resourceLabels]} ${count}`).join(' · ')),
     createElement('ul', null, ...failure.cleanup.reasons.map((reason,index) => createElement('li', {key: index, style: {overflowWrap: 'anywhere'}}, reason)))) : null,

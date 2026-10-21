@@ -12,7 +12,8 @@ const source=await readFile(join(root,'src/client/index.ts'),'utf8');
 const mutants=[
   ['missing-sidebar-name',"['sidebar.brand.name', HanaMeshName],",'','registers all three named brand slots'],
   ['missing-hero-mark',"['conversation.hero.brand.mark', HanaMeshMark],",'','registers all three named brand slots'],
-  ['wrong-dark-color',"dark: '#a99aff'","dark: '#000000'",'overrides business color in both palettes'],
+  ['global-theme-override',"// Brand color belongs to its own mark component; host tokens are read-only.","ctx.theme.overrideTokens('hanamesh-brand', {'--dsw-alias-state-business-primary': {light: '#7059e8', dark: '#a99aff'}});",'brand keeps its purple mark local without registering any global theme layer'],
+  ['business-color-exemption',"beforeTokens[key] === theme.active.tokens[key]);","key === '--dsw-alias-state-business-primary' || beforeTokens[key] === theme.active.tokens[key]);",'theme preservation includes business-primary and detects an external change instead of exempting it'],
   ['no-disposal','return unload;','return () => {};','registers all three named brand slots'],
   ['no-failure-rollback','for (const resource of [...resources].reverse()) {','for (const resource of []) {','setup failure rolls back earlier contributions'],
 ];
