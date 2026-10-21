@@ -91,3 +91,7 @@ npm run build
 品牌标志、字典、主题和正常检查资源在兼容失败时全部撤回；单独拥有的错误区经既有shell.overlay注册，保持可见直到插件正常卸载。错误区使用宿主公开主题token，不更改客户端、不会自动修复/重试，也不改变全局business-primary的既有值。错误区呈现code/slot与实际/预期形状，原工作台继续使用。`BrandState.owned`仅计品牌贡献；可选`errorPresentation`另报waiting/visible和其slots/waits，等待没有公开根槽不冒可见成功。卸载同时释放错误区与等待。新版产品验证断言零原生dialog且本插件错误区可见；本候选源码/组件截图不冒完整真实客户端验证。
 
 清理失败时，错误区显示仍拥有的资源计数和原清理原因，不声称标志或主题已全部撤回。公开声明读取失败由`declarationReadError`具名保留，不能把读取失败当空声明。
+
+## 静态资产（B17 I1）
+
+H 使用的静态图形路径、格式、摘要、来源及许可未定项见 [ASSETS.md](ASSETS.md)，机器可读说明为公开 `hanamesh-brand/assets/manifest.json`。两份原始 SVG 随正常包交付，当前品牌槽组件与运行行为保持原样。
