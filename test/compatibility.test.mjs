@@ -250,3 +250,13 @@ test('error surface unload failure is public and retains the original compatibil
   assert.equal(h.entries.get('shell.overlay').spec.id,'hanamesh-brand:error','failed release must not report the surface removed');
  }finally{if(original===undefined)delete globalThis.window;else globalThis.window=original;}
 });
+
+test('withdrawing the error slot exposes its release failure through the same public rejection',()=>{
+ const h=host(keys.filter(k=>k!==keys[1])),cause=new Error('ERROR_SURFACE_COLLAPSE_DENIED');
+ h.specs.set('shell.overlay',{type:'slot',name:'shell.overlay',kind:'list',scope:'root'});
+ const original=globalThis.window,events=[];globalThis.window={dispatchEvent:event=>{events.push(event);return true;}};
+ const register=h.ctx.slots.register;h.ctx.slots.register=(spec,component)=>{const release=register(spec,component);return spec.id==='hanamesh-brand:error'?()=>{throw cause;}:release;};
+ try{brand.apply(h.ctx);formalCommit(h);assert.throws(()=>h.collapse('shell.overlay'),error=>error instanceof AggregateError&&error.errors[1]===cause);
+ const rejection=events.at(-1).detail;assert.equal(rejection.code,'BRAND_SLOT_MISSING');assert.equal(rejection.presentation.message,cause.message);assert.equal(rejection.state.errorPresentation.status,'failed');
+ }finally{if(original===undefined)delete globalThis.window;else globalThis.window=original;}
+});
