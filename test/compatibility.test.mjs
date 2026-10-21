@@ -219,3 +219,34 @@ test('late incompatible declaration is local and waits honestly for the plugin e
  assert.equal(h.entries.size,0,'no error surface was declared yet');h.declare('shell.overlay');
  const panel=h.entries.get('shell.overlay');assert.equal(panel?.spec.id,'hanamesh-brand:error');assert.match(JSON.stringify(panel.component({})),/actual kind=chain/);h.unload();h.clean();
 });
+
+for (const delayed of [false, true]) test(`error surface ${delayed ? 'delayed' : 'immediate'} registration failure is public and rejects with both causes`,()=>{
+ const h=host(delayed?[]:keys); const cause=new Error('ERROR_SURFACE_REGISTER_DENIED');
+ const original=globalThis.window,events=[];globalThis.window={dispatchEvent:event=>{events.push(event);return true;}};
+ const register=h.ctx.slots.register;
+ h.ctx.slots.register=(spec,component)=>{if(spec.id==='hanamesh-brand:error')throw cause;return register(spec,component);};
+ try{
+  let thrown;
+  if(delayed){brand.apply(h.ctx);h.specs.set(keys[0],{type:'slot',name:keys[0],kind:'chain',scope:'root'});const pending=[...h.waits].find(w=>w.name===keys[0]);pending.active=pending.run();
+   assert.throws(()=>h.declare('shell.overlay'),error=>{thrown=error;return error instanceof AggregateError;});
+  }else{h.specs.get(keys[0]).kind='chain';h.specs.set('shell.overlay',{type:'slot',name:'shell.overlay',kind:'list',scope:'root'});
+   assert.throws(()=>brand.apply(h.ctx),error=>{thrown=error;return error instanceof AggregateError;});}
+  assert.equal(thrown.errors[0].code,'BRAND_SLOT_INCOMPATIBLE');assert.equal(thrown.errors[1],cause);
+  const rejection=events.at(-1).detail;assert.equal(rejection.code,'BRAND_SLOT_INCOMPATIBLE');
+  assert.equal(rejection.presentation.message,cause.message);assert.equal(rejection.state.errorPresentation.status,'failed');
+  assert.throws(()=>brand.validateSlots(h.ctx),error=>error.code==='BRAND_SLOT_INCOMPATIBLE'&&error.brandState.error.presentation.message===cause.message);
+  assert.equal(h.entries.size,0);h.unload();h.clean();
+ }finally{if(original===undefined)delete globalThis.window;else globalThis.window=original;}
+});
+test('error surface unload failure is public and retains the original compatibility cause',()=>{
+ const h=host(keys.filter(k=>k!==keys[1])),cause=new Error('ERROR_SURFACE_RELEASE_DENIED');
+ h.specs.set('shell.overlay',{type:'slot',name:'shell.overlay',kind:'list',scope:'root'});
+ const original=globalThis.window,events=[];globalThis.window={dispatchEvent:event=>{events.push(event);return true;}};
+ const register=h.ctx.slots.register;
+ h.ctx.slots.register=(spec,component)=>{const release=register(spec,component);return spec.id==='hanamesh-brand:error'?()=>{throw cause;}:release;};
+ try{brand.apply(h.ctx);formalCommit(h);assert.throws(()=>h.unload(),error=>error instanceof AggregateError&&error.errors[1]===cause);
+  const rejection=events.at(-1).detail;assert.equal(rejection.code,'BRAND_SLOT_MISSING');assert.equal(rejection.presentation.message,cause.message);
+  assert.deepEqual(rejection.state.errorPresentation,{status:'failed',slots:1,waits:1});
+  assert.equal(h.entries.get('shell.overlay').spec.id,'hanamesh-brand:error','failed release must not report the surface removed');
+ }finally{if(original===undefined)delete globalThis.window;else globalThis.window=original;}
+});
