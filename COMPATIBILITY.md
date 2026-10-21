@@ -43,3 +43,10 @@ D-79/D-82 的正式首次 commit 检查、观察构建、负例 fixture 和独�
 ## 错误面自身失败（C-PL-M01）
 
 错误面同步或延迟注册失败时，`hanamesh-brand:rejected` 的 `presentation.message` 与 `state.errorPresentation.status=failed` 公开保留该原因，原兼容错误 code/slot/cleanup 仍保留。入口抛出包含两层原因的 AggregateError，不宣称已呈现或正常成功。错误面卸载失败同样公开并抛出，保留未清理的计数；不以 console、alert、重试或客户端桥掩盖失败。普通兼容失败且错误面可用时继续留在插件内。
+
+
+## 0.1.1 的 M01 已知限制
+
+本版运行字节沿已审 9434c9c；仅固化版本与发布说明，不含 B17 资产候选。上述公开状态和 AggregateError 描述的是插件传播行为，不能推定官方普通界面必然接收或显示完整原因。官方 0.2.1-rc.2 的既有隔离实测（Docs b1d99995）中，同步 apply throw 只有官方启动失败摘要，已查 crash 文件没有双原因；rejected Promise 和实际延迟错误面注册失败时，管理页仍 Running，所观察到的准确原因在 DevTools Console。普通禁用后 Off 不证明卸载清理器实际执行或双原因日志送达，卸载清理故障的真实通路仍未证，不能称日志全可见。
+
+M01 按已知限制保留，非修复 PASS；不阻塞已审 F01 有限准入，不恢复上游请求或客户端改造。正常错误区可用时继续呈现兼容原因；错误区自身失败没有已证的完整普通用户接收面。完整限制与各层证据边界见 README 的 0.1.1 发布说明。

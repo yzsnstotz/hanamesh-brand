@@ -2,6 +2,18 @@
 
 # hanamesh-brand
 
+## 0.1.1 发布说明
+
+本版将已审 `9434c9cea630caa5b4b29b6f9bb327cb205cde85` 的 B04 / B06 / F01 行为固版：紫色仅归插件自己的品牌组件，保留兼容拒绝与回滚、插件内错误区和两层错误原因传播；五个 DSH peer 有限准入 `0.2.1-alpha.2 || 0.2.1-rc.2`、Cordis `4.0.5-alpha.1 || 4.0.5`，React 18.3.1。版本与发布说明之外没有新增运行行为。本版不含 B17 静态资产候选，也不改原生 welcome、全局 favicon 或会话标题。
+
+**C-PL-M01 是已知限制，不是修复 PASS。** 官方 0.2.1-rc.2 的既有隔离故障注入实测（Docs `b1d99995`）表明：
+
+- 客户端同步 apply 抛错时，官方启动失败对话框及已查 crash 文件只有启动失败摘要，没有原兼容原因与错误面失败原因的完整正文。
+- apply 返回 rejected Promise，或实际 Brand 的延迟校验与错误面注册失败时，普通插件管理页仍可能显示 Running；观察到的准确原因在原生 DevTools Console。DevTools 是开发者诊断，不能当普通用户错误面。
+- 普通开关禁用后显示 Off；卸载清理器是否在该整条真实路径中执行、双原因日志是否送达尚未证实，不能笼统声称所有失败均可从日志看到。
+
+这些限制不阻塞已审 F01 的有限版本准入，但没有满足失败始终可见的 M01 闭环。保留原 RED 证据；不新增替代弹窗、重试、客户端改造或上游请求。错误区正常可用时仍按原公开槽处理兼容拒绝。源码/组件、正常包消费者、各版本真实 UI 与 owner 验收分别判断，本次版本元数据本身不补齐真实 UI 证据。
+
 HanaMesh 的客户端品牌插件，提供 `dsh.client` 和可安装的 `dsh.bundle` profile 层。包根的空 `apply()` 仅供 Host Loader 激活元数据，没有业务服务。安装后的启用范围由 profile 的 bundle 列表决定；本仓不修改 DMG 预装、网站或用户 profile。
 
 - 注册 `sidebar.brand.mark`、`sidebar.brand.name`、`conversation.hero.brand.mark`，使用旧 fork 的紫色 H 标和 HanaMesh 名称。
@@ -58,7 +70,7 @@ Node 24：`npm ci && npm test`；`npm run check` 做类型检查；`npm pack` �
 
 新增 `validateSlots(ctx): void` 可用于同一实例的显式当前组合检查；产品入口自动调用它对应的同一实例检查。缺项抛 `BrandCompatibilityError`，`code=BRAND_SLOT_MISSING`、准确 slot/message；不兼容为 `BRAND_SLOT_INCOMPATIBLE`、actual.kind/scope 及 expected={kind:single,scope:root}。每项已声明时先校验其实际形状，异步声明注册错误也统一撤销本方全部字典、主题、槽位/等待及检查组件。原错误对象保持，附 `brandState`；释放失败附 `cleanupError` 并如实留下非零计数，不伪造成功。
 
-兼容故障在回滚后通过本插件的 `shell.overlay` 非模态错误区显示准确原因，不调用原生 `window.alert`；仍发送 `hanamesh-brand:rejected` CustomEvent。自动 React 检查及延迟声明局部呈现已记录的兼容失败，不抛穿宿主；显式 `validateSlots(ctx)` 仍抛同一个准确错误。未知的检查读取错误也在本错误区保留原因；初始化期间非兼容的底层错误保持抛出。detail={code,message,slot?,actual?,expected?,state}；state 记录真实 phase/declarations/owned 和独立 conversation 文案及无关主题 token 的公开读回。无法核实其它贡献时 otherContributionsPreserved=false，不假造 true；错误面注册失败记录 BRAND_ERROR_PRESENTATION_FAILED 并保留原错误及 presentationError。该故障面不受 verification 开关控制。
+兼容故障在回滚后、错误区能够注册时，通过本插件的 `shell.overlay` 非模态错误区显示准确原因，不调用原生 `window.alert`；仍发送 `hanamesh-brand:rejected` CustomEvent。自动 React 检查及延迟声明局部呈现已记录的兼容失败，不抛穿宿主；显式 `validateSlots(ctx)` 仍抛同一个准确错误。未知的检查读取错误也在本错误区保留原因；初始化期间非兼容的底层错误保持抛出。detail={code,message,slot?,actual?,expected?,state}；state 记录真实 phase/declarations/owned 和独立 conversation 文案及无关主题 token 的公开读回。无法核实其它贡献时 otherContributionsPreserved=false，不假造 true；错误面注册失败记录 BRAND_ERROR_PRESENTATION_FAILED 并保留原错误及 presentationError。该故障面不受 verification 开关控制。
 
 默认正式 `npm run build` 移除观察面代码。D-82 测试构建 `npm run build -- --verification` 在浏览器入口用同一公开 `apply(ctx, {verification:{enabled:true}})` 启用只读观察；固定客户端加载器不透传 Host 配置，因此不要求 PM 从 profile 转发此值。正式入口、默认 false、Node/类型入口及拒绝/回滚实现保持。`window.hanameshBrandVerification` 仅有只读 inspect()，没有 validate。其 `hanamesh-brand:lifecycle` 发送实际 waiting/active/完成释放状态，含 compatibilityCheck=pending|passed。拒绝/卸载移除本方 global，事件只报告已实际释放的资源。产品验证只经 PM 提供的正常操作触发首次检查，不执行 JS 校验、启动服务或写用户 profile。
 
@@ -90,4 +102,4 @@ npm run build
 
 品牌标志、字典、主题和正常检查资源在兼容失败时全部撤回；单独拥有的错误区经既有shell.overlay注册，保持可见直到插件正常卸载。错误区使用宿主公开主题token，不更改客户端、不会自动修复/重试，也不改变全局business-primary的既有值。错误区呈现code/slot与实际/预期形状，原工作台继续使用。`BrandState.owned`仅计品牌贡献；可选`errorPresentation`另报waiting/visible和其slots/waits，等待没有公开根槽不冒可见成功。卸载同时释放错误区与等待。新版产品验证断言零原生dialog且本插件错误区可见；本候选源码/组件截图不冒完整真实客户端验证。
 
-清理失败时，错误区显示仍拥有的资源计数和原清理原因，不声称标志或主题已全部撤回。公开声明读取失败由`declarationReadError`具名保留，不能把读取失败当空声明。
+清理失败且错误区仍可用时，错误区显示仍拥有的资源计数和原清理原因；错误区自身失败的普通界面限制见本页 0.1.1 发布说明，不声称标志或主题已全部撤回。公开声明读取失败由`declarationReadError`具名保留，不能把读取失败当空声明。
