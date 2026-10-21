@@ -33,3 +33,7 @@
 Q61 于 2026-10-11 复核 `dsh-v0.2.0-rc.2` / `639ed015397290b3745d163aafe02ffee4aa3f84`，发现原 ESM default 不能作为 DSH 浏览器脚本加载，随后新增正式闭包入口和共享 React 构建。该 rc.2 的干净消费者、默认 profile 和隔离浏览器 API 结果只属于历史版本，不能证明本轮 alpha 兼容或产品通过。
 
 D-79/D-82 的正式首次 commit 检查、观察构建、负例 fixture 和独立产品验证接口保留。本轮只同步其 peer 声明断言及文字，不扩展旧验收机制。观察构建仍无 validate 触发入口；首页标题仍由打包层负责，本品牌 namespace 不覆盖 conversation 字典。
+
+## 错误面自身失败（C-PL-M01）
+
+错误面同步或延迟注册失败时，`hanamesh-brand:rejected` 的 `presentation.message` 与 `state.errorPresentation.status=failed` 公开保留该原因，原兼容错误 code/slot/cleanup 仍保留。入口抛出包含两层原因的 AggregateError，不宣称已呈现或正常成功。错误面卸载失败同样公开并抛出，保留未清理的计数；不以 console、alert、重试或客户端桥掩盖失败。普通兼容失败且错误面可用时继续留在插件内。
