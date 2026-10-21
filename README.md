@@ -55,7 +55,7 @@ Node 24：`npm ci && npm test`；`npm run check` 做类型检查；`npm pack` �
 
 新增 `validateSlots(ctx): void` 可用于同一实例的显式当前组合检查；产品入口自动调用它对应的同一实例检查。缺项抛 `BrandCompatibilityError`，`code=BRAND_SLOT_MISSING`、准确 slot/message；不兼容为 `BRAND_SLOT_INCOMPATIBLE`、actual.kind/scope 及 expected={kind:single,scope:root}。每项已声明时先校验其实际形状，异步声明注册错误也统一撤销本方全部字典、主题、槽位/等待及检查组件。原错误对象保持，附 `brandState`；释放失败附 `cleanupError` 并如实留下非零计数，不伪造成功。
 
-正式故障在回滚后原生 `window.alert` 给出准确原因，再发送 `hanamesh-brand:rejected` CustomEvent 并抛原错。detail={code,message,slot?,actual?,expected?,state}；state 记录真实 phase/declarations/owned 和独立 conversation 文案及无关主题 token 的公开读回。无法核实其它贡献时 otherContributionsPreserved=false，不假造 true；告警设施自身失败会报告 BRAND_ERROR_NOTIFICATION_FAILED，仍保留原错误。该故障面不受 verification 开关控制。
+兼容故障在回滚后通过本插件的 `shell.overlay` 非模态错误区显示准确原因，不调用原生 `window.alert`；仍发送 `hanamesh-brand:rejected` CustomEvent。自动 React 检查及延迟声明局部呈现已记录的兼容失败，不抛穿宿主；显式 `validateSlots(ctx)` 仍抛同一个准确错误。未知的检查读取错误也在本错误区保留原因；初始化期间非兼容的底层错误保持抛出。detail={code,message,slot?,actual?,expected?,state}；state 记录真实 phase/declarations/owned 和独立 conversation 文案及无关主题 token 的公开读回。无法核实其它贡献时 otherContributionsPreserved=false，不假造 true；错误面注册失败记录 BRAND_ERROR_PRESENTATION_FAILED 并保留原错误及 presentationError。该故障面不受 verification 开关控制。
 
 默认正式 `npm run build` 移除观察面代码。D-82 测试构建 `npm run build -- --verification` 在浏览器入口用同一公开 `apply(ctx, {verification:{enabled:true}})` 启用只读观察；固定客户端加载器不透传 Host 配置，因此不要求 PM 从 profile 转发此值。正式入口、默认 false、Node/类型入口及拒绝/回滚实现保持。`window.hanameshBrandVerification` 仅有只读 inspect()，没有 validate。其 `hanamesh-brand:lifecycle` 发送实际 waiting/active/完成释放状态，含 compatibilityCheck=pending|passed。拒绝/卸载移除本方 global，事件只报告已实际释放的资源。产品验证只经 PM 提供的正常操作触发首次检查，不执行 JS 校验、启动服务或写用户 profile。
 
@@ -82,3 +82,9 @@ npm run build
 附属负例 `test/negative-declarer.client.mjs` 是锁定 FIXTURE；`node scripts/build-negative-declarer.mjs --out-dir <隔离fixture目录>` 消费其已审 packageInputs，生成共享 React 的 client 工厂、Host 元数据入口、正常 manifest 和 cordis.patch.yml。再用 `npm pack <该目录> --ignore-scripts --pack-destination <隔离包目录>` 供正常安装；fixture renderer peer 为目标 SDK `0.2.1-alpha.2`，与当前品牌 peer 对齐。fixture 只经 shell.overlay 持有自己的控件及声明，六种 mode 用正常 select/declare/withdraw 切换；不争 root、不撤他方或触发品牌检查。真实原声明者须先正常退出；碰撞显示真实错误。正例仍使用真实 provider，fixture 不证明正式兼容性。PM 正常操作、选窗及 schema2 供给缺口一次列在锁定输入文档；本模块不启停 CLIENT 或写用户 profile。
 
 公开 inputs.diagnosticBudgets 默认毫秒：cdpConnectMs=30000、uiOperationMs=30000、lifecycleSignalMs=15000、productCaseMs=120000、teardownMs=5000；可具名覆盖，整数1..2147483647是 Node timer 表达范围，均为测试诊断、非安全策略。参数及默认等待显式传给 Playwright。耗尽仅报 DIAGNOSTIC_UNFINISHED、预算/现场/原 cause，不断定缺槽位、不加时重试；取消/结束解除计时器、waiter、DOM/CDP订阅，断开自己的 transport、不停止 CLIENT。真实装配未完成及无法确认释放保留故障与现场，不能当产品通过。完整工程门、真实产品门与 owner 门均保留。
+
+## 2026-10-21候选：插件内兼容错误区
+
+品牌标志、字典、主题和正常检查资源在兼容失败时全部撤回；单独拥有的错误区经既有shell.overlay注册，保持可见直到插件正常卸载。错误区使用宿主公开主题token，不更改客户端、不会自动修复/重试，也不改变全局business-primary的既有值。错误区呈现code/slot与实际/预期形状，原工作台继续使用。`BrandState.owned`仅计品牌贡献；可选`errorPresentation`另报waiting/visible和其slots/waits，等待没有公开根槽不冒可见成功。卸载同时释放错误区与等待。新版产品验证断言零原生dialog且本插件错误区可见；本候选源码/组件截图不冒完整真实客户端验证。
+
+清理失败时，错误区显示仍拥有的资源计数和原清理原因，不声称标志或主题已全部撤回。公开声明读取失败由`declarationReadError`具名保留，不能把读取失败当空声明。

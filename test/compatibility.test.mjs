@@ -43,11 +43,12 @@ function host(initial = keys) {
       for (const wait of waits) if (wait.name === name) { wait.active?.(); wait.active = undefined; }
     },
     clean() {
-      assert.equal(entries.size, 0); assert.equal(waits.size, 0);
+      assert.equal([...entries.values()].filter(entry => entry.spec.id !== 'hanamesh-brand:error').length, 0);
+      assert.ok(waits.size <= 1 && [...waits].every(wait => wait.name === 'shell.overlay'), 'only the separately owned error presenter may wait');
       assert.deepEqual([...dicts], [['conversation', originalDictionary]]);
       assert.deepEqual([...layers], [['other', originalLayer]]);
     },
-    unload() { effects.splice(0).reverse().forEach(run => run()); },
+    unload() { effects.splice(0).reverse().forEach(run => run()); assert.equal(entries.size, 0); assert.equal(waits.size, 0); },
   };
 }
 function verify(ctx) {
@@ -116,6 +117,7 @@ function formalCommit(h) {
   const entry = h.entries.get('shell.overlay');
   assert.ok(entry, 'normal product must register its shell.overlay compatibility checkpoint');
   const element = entry.component({});
+  if (entry.spec.id === 'hanamesh-brand:error') return element;
   assert.equal(typeof element.props.onCommit, 'function', 'formal React first-commit callback');
   return element.props.onCommit();
 }
@@ -128,8 +130,10 @@ for (const missing of keys) test(`verification off: formal first commit rejects 
   try {
     brand.apply(h.ctx, {verification: {enabled: false}});
     assert.equal(globalThis.window.hanameshBrandVerification, undefined);
-    assert.throws(() => formalCommit(h), error => error.code === 'BRAND_SLOT_MISSING' && error.slot === missing);
-    assert.equal(alerts.length, 1); assert.ok(alerts[0].includes(missing));
+    assert.doesNotThrow(() => formalCommit(h));
+    assert.throws(() => verify(h.ctx), error => error.code === 'BRAND_SLOT_MISSING' && error.slot === missing);
+    assert.equal(alerts.length, 0);
+    assert.match(JSON.stringify(h.entries.get('shell.overlay').component({})), new RegExp(missing.replaceAll('.', '\\.')));
     const failure = events.find(event => event.type === 'hanamesh-brand:rejected');
     assert.ok(failure, 'normal product must publish its rejection after complete rollback');
     assert.equal(failure.detail.code, 'BRAND_SLOT_MISSING');
@@ -162,13 +166,56 @@ for (const [field, actual] of [['kind', 'chain'], ['scope', 'session']])
     const original = globalThis.window, messages = [], events = [];
     globalThis.window = {alert: message => messages.push(message), dispatchEvent: event => { events.push(event); return true; }};
     try {
-      assert.throws(() => {
-        brand.apply(h.ctx, {verification: {enabled: false}}); formalCommit(h);
-      }, error => error.code === 'BRAND_SLOT_INCOMPATIBLE' && error.slot === keys[2]
+      assert.doesNotThrow(() => { brand.apply(h.ctx, {verification: {enabled: false}}); formalCommit(h); });
+      assert.throws(() => verify(h.ctx), error => error.code === 'BRAND_SLOT_INCOMPATIBLE' && error.slot === keys[2]
         && error.actual?.[field] === actual && error.expected?.kind === 'single' && error.expected?.scope === 'root');
-      assert.equal(messages.length, 1); assert.ok(messages[0].includes(keys[2]));
+      assert.equal(messages.length, 0);
+      assert.match(JSON.stringify(h.entries.get('shell.overlay').component({})), /actual kind=/);
       assert.equal(events.find(event => event.type === 'hanamesh-brand:rejected')?.detail.code, 'BRAND_SLOT_INCOMPATIBLE');
       assert.equal(globalThis.window.hanameshBrandVerification, undefined);
       h.clean(); h.unload(); h.clean();
     } finally { if (original === undefined) delete globalThis.window; else globalThis.window = original; }
   });
+
+test('normal compatibility failure stays in the plugin error surface without a native alert or host-wide React failure',()=>{
+ const h=host(keys.filter(key=>key!==keys[1]));h.specs.set('shell.overlay',{type:'slot',name:'shell.overlay',kind:'list',scope:'root',occupants:[],children:[]});
+ const original=globalThis.window,alerts=[],events=[];globalThis.window={alert:message=>alerts.push(message),dispatchEvent:event=>{events.push(event);return true;}};
+ try {
+  brand.apply(h.ctx);
+  assert.doesNotThrow(()=>formalCommit(h),'automatic first commit must remain local to this plugin');
+  assert.equal(alerts.length,0,'no native blocking alert');
+  const failure=events.find(e=>e.type==='hanamesh-brand:rejected');assert.equal(failure?.detail.code,'BRAND_SLOT_MISSING');assert.deepEqual(failure.detail.state.errorPresentation,{status:'visible',slots:1,waits:1});
+  const panel=h.entries.get('shell.overlay');assert.equal(panel?.spec.id,'hanamesh-brand:error');const element=panel.component({});assert.equal(element.props.role,'alert');assert.ok(JSON.stringify(element).includes(keys[1]));
+  assert.throws(()=>brand.validateSlots(h.ctx),error=>error.code==='BRAND_SLOT_MISSING'&&error.slot===keys[1],'explicit checks still return the precise original failure');
+  assert.equal(h.dicts.has('hanamesh.brand'),false);assert.equal(h.layers.has('hanamesh-brand'),false);
+  h.unload();assert.equal(h.entries.size,0);assert.equal(h.waits.size,0);
+ }finally {if(original===undefined)delete globalThis.window;else globalThis.window=original;}
+});
+
+test('an unknown snapshot failure is retained as the exact cause and presented locally',()=>{
+ const h=host();h.specs.set('shell.overlay',{type:'slot',name:'shell.overlay',kind:'list',scope:'root'});brand.apply(h.ctx);
+ const cause=new Error('SLOT_SNAPSHOT_FAILED');h.ctx.slots.snapshot=()=>{throw cause;};
+ assert.doesNotThrow(()=>formalCommit(h));
+ assert.throws(()=>brand.validateSlots(h.ctx),error=>error===cause);
+ const panel=h.entries.get('shell.overlay');assert.equal(panel?.spec.id,'hanamesh-brand:error');assert.match(JSON.stringify(panel.component({})),/SLOT_SNAPSHOT_FAILED/);
+ assert.equal(cause.brandState.declarationReadError,'SLOT_SNAPSHOT_FAILED');h.unload();
+});
+test('a failed theme release remains visible and is never described as complete rollback',()=>{
+ const h=host(keys.filter(key=>key!==keys[1]));h.specs.set('shell.overlay',{type:'slot',name:'shell.overlay',kind:'list',scope:'root'});
+ h.ctx.theme.overrideTokens=(id,value)=>{h.layers.set(id,value);return()=>{throw new Error('THEME_RELEASE_FAILED');};};
+ brand.apply(h.ctx);assert.doesNotThrow(()=>formalCommit(h));
+ const panel=h.entries.get('shell.overlay');assert.ok(panel);const rendered=JSON.stringify(panel.component({}));
+ assert.equal(h.layers.has('hanamesh-brand'),true);assert.doesNotMatch(rendered,/were removed/);assert.match(rendered,/THEME_RELEASE_FAILED/);assert.match(rendered,/may still/);
+ assert.throws(()=>brand.validateSlots(h.ctx),error=>error.code==='BRAND_SLOT_MISSING'&&error.cleanupError instanceof AggregateError&&error.brandState.owned.themeLayers===1);
+ h.unload();h.layers.delete('hanamesh-brand');
+});
+
+test('late incompatible declaration is local and waits honestly for the plugin error surface',()=>{
+ const h=host([]);brand.apply(h.ctx);
+ h.specs.set(keys[0],{type:'slot',name:keys[0],kind:'chain',scope:'root'});
+ const pending=[...h.waits].find(wait=>wait.name===keys[0]);assert.ok(pending);
+ assert.doesNotThrow(()=>{pending.active=pending.run();});
+ assert.throws(()=>brand.validateSlots(h.ctx),error=>error.code==='BRAND_SLOT_INCOMPATIBLE'&&error.brandState.errorPresentation.status==='waiting');
+ assert.equal(h.entries.size,0,'no error surface was declared yet');h.declare('shell.overlay');
+ const panel=h.entries.get('shell.overlay');assert.equal(panel?.spec.id,'hanamesh-brand:error');assert.match(JSON.stringify(panel.component({})),/actual kind=chain/);h.unload();h.clean();
+});

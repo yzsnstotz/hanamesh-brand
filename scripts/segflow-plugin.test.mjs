@@ -512,8 +512,12 @@ for (const name of scenarios.filter(name => name.startsWith('missing:') || name.
       }
       assert.equal(result.state.phase, 'rejected'); clear(result.state);
       await native.completed();
-      assert.equal(native.failures.length, 0); assert.equal(native.messages.length, 1);
-      assert.ok(native.messages[0].includes(result.slot));
+      assert.equal(native.failures.length, 0); assert.equal(native.messages.length, 0);
+      await ui('plugin-local precise error is visible', async () => {
+        const panel = page.locator('[data-hanamesh-brand-error]');
+        assert.equal(await panel.isVisible(), true);
+        assert.ok((await panel.textContent()).includes(result.slot));
+      });
       await ui('rejection removes observation face', async () =>
         assert.equal(await page.evaluate(() => typeof window.hanameshBrandVerification), 'undefined'));
       assert.ok(spec.restoreProviders?.length, 'CLIENT_PROVIDER_RESTORE_UNAVAILABLE');
@@ -560,8 +564,12 @@ for (const slot of slots) productTest('release mode normal React commit rejects 
       assert.equal(state.error.code, 'BRAND_SLOT_MISSING'); assert.equal(state.error.slot, slot);
       assert.ok(state.error.message.includes(slot)); clear(state);
       await native.completed();
-      assert.equal(native.failures.length, 0); assert.equal(native.messages.length, 1);
-      assert.ok(native.messages[0].includes(slot));
+      assert.equal(native.failures.length, 0); assert.equal(native.messages.length, 0);
+      await ui('release plugin-local precise error is visible', async () => {
+        const panel = page.locator('[data-hanamesh-brand-error]');
+        assert.equal(await panel.isVisible(), true);
+        assert.ok((await panel.textContent()).includes(slot));
+      });
       assert.ok(spec.restoreProviders?.length, 'CLIENT_PROVIDER_RESTORE_UNAVAILABLE');
       for (const step of spec.restoreProviders) await action(page, step);
       await ui('release rejection leaves no observer and restores actual UI', async () => {

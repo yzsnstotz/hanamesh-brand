@@ -1,4 +1,4 @@
-import {HanaMeshMark, HanaMeshName, HanaMeshCompatibilityCheckpoint} from './Brand.ts';
+import {HanaMeshMark, HanaMeshName, HanaMeshCompatibilityCheckpoint, HanaMeshBrandFailure} from './Brand.ts';
 
 type Dispose = () => void;
 /** Only the public composition fields consumed by this plugin. */
@@ -33,12 +33,16 @@ export interface BrandState {
   otherContributionsPreserved: boolean;
   locale?: string; brandHeadline?: string;
   error?: BrandFailure;
+  declarationReadError?: string;
+  /** Separate from rolled-back brand contributions; removed on plugin unload. */
+  errorPresentation?: {status: 'waiting' | 'visible'; slots: number; waits: number};
 }
 export interface BrandVerification {inspect(): BrandState}
 declare global {interface Window {hanameshBrandVerification?: BrandVerification}}
 export interface BrandFailure {
   code: string; message: string; slot?: string;
   actual?: {kind?: string; scope?: string}; expected?: {kind: string; scope: string};
+  cleanup?: {remaining: BrandState['owned']; reasons: string[]};
 }
 export interface BrandRejection extends BrandFailure {state: BrandState}
 export const DEFAULT_BRAND_CONFIG: Readonly<BrandConfig> = Object.freeze({verification: Object.freeze({enabled: false})});
@@ -96,6 +100,8 @@ export function apply(ctx: ClientContext, config: BrandConfig = DEFAULT_BRAND_CO
     type Resource = {kind: Kind; release: Dispose};
     const resources = new Set<Resource>();
     let checkpoint: Dispose | undefined;
+    let errorWait: Dispose | undefined;
+    let errorPresentation: BrandState['errorPresentation'];
     let closed = false, passed = false, initializing = true, announced = false;
     let failure: unknown;
     // Public readbacks before contribution, without changing locale/preferences.
@@ -107,15 +113,26 @@ export function apply(ctx: ClientContext, config: BrandConfig = DEFAULT_BRAND_CO
     let removeObserver: Dispose = () => {};
     let publish: () => void = () => {};
 
-    const diagnostic = (): BrandFailure => {
-      const value = failure as Partial<BrandFailure> | undefined;
-      return {code: value?.code ?? 'BRAND_REGISTRATION_FAILED',
-        message: value?.message ?? String(failure), slot: value?.slot,
-        actual: value?.actual, expected: value?.expected};
-    };
-    const inspect = (): BrandState => {
+    const countOwned = (): BrandState['owned'] => {
       const owned = {slots: 0, dictionaries: 0, themeLayers: 0, waits: 0};
       for (const resource of resources) owned[resource.kind]++;
+      return owned;
+    };
+    const diagnostic = (): BrandFailure => {
+      const value = failure as Partial<BrandFailure> | undefined;
+      const cleanup = failure instanceof Error ? (failure as Error & {cleanupError?: unknown}).cleanupError : undefined;
+      const reasons = cleanup instanceof AggregateError
+        ? cleanup.errors.map(error => error instanceof Error ? error.message : String(error)) : cleanup === undefined ? [] : [String(cleanup)];
+      return {code: value?.code ?? 'BRAND_REGISTRATION_FAILED',
+        message: value?.message ?? String(failure), slot: value?.slot,
+        actual: value?.actual, expected: value?.expected,
+        ...(cleanup === undefined ? {} : {cleanup: {remaining: countOwned(), reasons}})};
+    };
+    const inspect = (): BrandState => {
+      const owned = countOwned();
+      let observed: CompositionNode[] = [], declarationReadError: string | undefined;
+      try { observed = declarations(ctx); }
+      catch (error) { declarationReadError = error instanceof Error ? error.message : String(error); }
       const locale = ctx.locale.getLocale?.().active;
       const theme = ctx.theme.getTheme?.();
       // Compare independent namespace and unrelated tokens via public faces.
@@ -129,12 +146,14 @@ export function apply(ctx: ClientContext, config: BrandConfig = DEFAULT_BRAND_CO
           (owned.themeLayers > 0 && key === '--dsw-alias-state-business-primary')
           || beforeTokens[key] === theme.active.tokens[key]);
       return {phase: closed ? (failure === undefined ? 'disposed' : 'rejected')
-        : passed && requiredSlots.every(slot => declarations(ctx).some(node => node.name === slot))
+        : passed && requiredSlots.every(slot => observed.some(node => node.name === slot))
           && owned.slots === 3 ? 'active' : 'waiting',
-        compatibilityCheck: passed ? 'passed' : 'pending', declarations: declarations(ctx), owned,
+        compatibilityCheck: passed ? 'passed' : 'pending', declarations: observed, owned,
+        ...(declarationReadError ? {declarationReadError} : {}),
         otherContributionsPreserved: sameLocale && sameTheme,
         locale, brandHeadline: ctx.locale.bind?.('hanamesh.brand')('hero.headline'),
-        ...(failure === undefined ? {} : {error: diagnostic()})};
+        ...(failure === undefined ? {} : {error: diagnostic()}),
+        ...(errorPresentation ? {errorPresentation: {...errorPresentation}} : {})};
     };
     const event = (type: string, detail: unknown): void => {
       if (typeof window !== 'undefined') window.dispatchEvent(new CustomEvent(type, {detail}));
@@ -142,14 +161,24 @@ export function apply(ctx: ClientContext, config: BrandConfig = DEFAULT_BRAND_CO
     const notifyFailure = (): void => {
       if (failure === undefined || announced) return;
       announced = true;
-      const state = inspect(), error = diagnostic();
-      if (failure instanceof Error) Object.assign(failure, {brandState: state});
-      if (typeof window !== 'undefined') {
-        try { window.alert(error.message); }
-        catch (notificationError) {
-          console.error('BRAND_ERROR_NOTIFICATION_FAILED', notificationError, failure);
+      const error = diagnostic();
+      if (failure !== undefined) {
+        errorPresentation = {status: 'waiting', slots: 0, waits: 1};
+        try {
+          errorWait = ctx.slots.inject(checkpointSlot, () => {
+            const release = ctx.slots.register({name: checkpointSlot, id: 'hanamesh-brand:error', order: 80, label: 'HanaMesh Brand error'},
+              () => HanaMeshBrandFailure({failure: error, language: ctx.locale.getLocale?.().active ?? 'en'}));
+            errorPresentation = {status: 'visible', slots: 1, waits: 1};
+            return () => { release(); errorPresentation = {status: 'waiting', slots: 0, waits: 1}; };
+          });
+        } catch (presentationError) {
+          errorPresentation = undefined;
+          if (failure instanceof Error) Object.assign(failure, {presentationError});
+          console.error('BRAND_ERROR_PRESENTATION_FAILED', presentationError, failure);
         }
       }
+      const state = inspect();
+      if (failure instanceof Error) Object.assign(failure, {brandState: state});
       event('hanamesh-brand:rejected', {...error, state});
     };
     const dispose = (): void => {
@@ -167,6 +196,10 @@ export function apply(ctx: ClientContext, config: BrandConfig = DEFAULT_BRAND_CO
       }
       notifyFailure(); publish();
       if (releaseErrors.length) throw failure;
+    };
+    const unload = (): void => {
+      try { dispose(); }
+      finally { errorWait?.(); errorWait = undefined; errorPresentation = undefined; }
     };
     const reject = (error: unknown): never => {
       if (failure === undefined) failure = error;
@@ -238,7 +271,12 @@ export function apply(ctx: ClientContext, config: BrandConfig = DEFAULT_BRAND_CO
               // Single slots elect by priority (lowest wins); order is list-only.
               name: slot, id: 'hanamesh-brand', priority: -80, label: 'HanaMesh',
             }, component));
-          } catch (error) { return reject(error); }
+          } catch (error) {
+            if (initializing) return reject(error);
+            try { reject(error); }
+            catch (cause) { if (!(cause instanceof BrandCompatibilityError)) throw cause; }
+            return () => {};
+          }
         }));
       }
       checkpoint = own('waits', () => ctx.slots.inject(checkpointSlot, () => {
@@ -246,11 +284,22 @@ export function apply(ctx: ClientContext, config: BrandConfig = DEFAULT_BRAND_CO
         try {
           return own('slots', () => ctx.slots.register({
             name: checkpointSlot, id: 'hanamesh-brand:compatibility', order: 80, label: 'HanaMesh compatibility',
-          }, () => HanaMeshCompatibilityCheckpoint(() => { if (!passed) validateSlots(ctx); })));
+          }, () => HanaMeshCompatibilityCheckpoint(() => {
+            if (!passed) {
+              try { validateSlots(ctx); }
+              catch (error) { if (failure !== error) throw error; }
+            }
+          })));
         } catch (error) { return reject(error); }
       }));
       initializing = false; publish();
-      return dispose;
-    } catch (error) { dispose(); throw error; }
+      return unload;
+    } catch (error) {
+      dispose();
+      // A known branding incompatibility is visible locally and remains a precise
+      // failure through validateSlots; it must not take down the host renderer.
+      if (error instanceof BrandCompatibilityError) return unload;
+      unload(); throw error;
+    }
   }, 'hanamesh-brand:client');
 }

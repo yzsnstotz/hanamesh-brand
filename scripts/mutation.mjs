@@ -13,8 +13,8 @@ const mutants=[
   ['missing-sidebar-name',"['sidebar.brand.name', HanaMeshName],",'','registers all three named brand slots'],
   ['missing-hero-mark',"['conversation.hero.brand.mark', HanaMeshMark],",'','registers all three named brand slots'],
   ['wrong-dark-color',"dark: '#a99aff'","dark: '#000000'",'overrides business color in both palettes'],
-  ['no-disposal','return dispose;','return () => {};','registers all three named brand slots'],
-  ['no-failure-rollback','catch (error) { dispose(); throw error; }','catch (error) { throw error; }','setup failure rolls back earlier contributions'],
+  ['no-disposal','return unload;','return () => {};','registers all three named brand slots'],
+  ['no-failure-rollback','for (const resource of [...resources].reverse()) {','for (const resource of []) {','setup failure rolls back earlier contributions'],
 ];
 const results=[];
 for(const [name,old,replacement,expected] of mutants){
