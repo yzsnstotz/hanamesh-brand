@@ -3,4 +3,6 @@ lib/
 *.tgz
 .npm-cache/
 
-!vendor/hanamesh-release-platform-gate-0.1.0.tgz
+!vendor/hanamesh-release-platform-gate-0.1.9.tgz
+
+artifacts/

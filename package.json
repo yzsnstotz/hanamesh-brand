@@ -83,7 +83,7 @@
     "esbuild": "0.28.2",
     "playwright-core": "1.56.0",
     "typescript": "5.9.3",
-    "@hanamesh/release-platform-gate": "file:vendor/hanamesh-release-platform-gate-0.1.0.tgz"
+    "@hanamesh/release-platform-gate": "file:vendor/hanamesh-release-platform-gate-0.1.9.tgz"
   },
   "repository": {
     "type": "git",
