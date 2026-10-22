@@ -39,14 +39,17 @@
     "types": "npm run check",
     "test:contract": "npm run build && node --experimental-strip-types --test test/*.test.mjs",
     "toolchain": "node scripts/toolchain.mjs",
-    "preflight": "npm run toolchain && npm run types && npm run test:contract && node scripts/preflight.mjs",
+    "preflight": "npm run toolchain && npm run types && npm run test:contract && node scripts/preflight.mjs && npm run release:check",
     "test:mutation": "npm run build && node scripts/mutation.mjs",
     "test:package": "node test/package-api.mjs",
     "test:profile": "node test/default-profile.mjs",
     "pretest": "npm run build",
     "prepack": "npm run build",
     "prepare": "npm run build",
-    "test:upstream": "node test/upstream-api.mjs"
+    "test:upstream": "node test/upstream-api.mjs",
+    "release:check": "hanamesh-release check --lockfile package-lock.json",
+    "release:publish": "hanamesh-release publish --lockfile package-lock.json",
+    "prepublishOnly": "hanamesh-release source-guard"
   },
   "dsh": {
     "client": {
@@ -79,7 +82,8 @@
     "@types/react": "18.3.12",
     "esbuild": "0.28.2",
     "playwright-core": "1.56.0",
-    "typescript": "5.9.3"
+    "typescript": "5.9.3",
+    "@hanamesh/release-platform-gate": "file:vendor/hanamesh-release-platform-gate-0.1.0.tgz"
   },
   "repository": {
     "type": "git",

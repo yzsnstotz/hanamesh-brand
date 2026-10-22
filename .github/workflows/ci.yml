@@ -1,0 +1,53 @@
+name: brand-release-checks
+on: [push, pull_request]
+permissions: {}
+concurrency:
+  group: brand-release-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  release-check:
+    runs-on: macos-15
+    env:
+      npm_config_update_notifier: 'false'
+      npm_config_fetch_retries: '0'
+      GIT_CONFIG_NOSYSTEM: '1'
+      GIT_TERMINAL_PROMPT: '0'
+    steps:
+      - name: Initialize isolated directories
+        run: |
+          python3 - <<'PYTHON'
+          import os, json
+          from pathlib import Path
+          root = Path(os.environ['GITHUB_WORKSPACE']).parent / 'brand-ci'
+          settings = {'CI_ISOLATION_ROOT': root, 'HOME': root/'home', 'DSH_HOME': root/'dsh',
+            'CFFIXED_USER_HOME': root/'home', 'TMPDIR': root/'tmp', 'npm_config_cache': root/'npm'}
+          with open(os.environ['GITHUB_ENV'], 'a') as out:
+            for key, value in settings.items():
+              value.mkdir(mode=0o700, parents=True, exist_ok=True)
+              (value/'.run-state.json').write_text(json.dumps({'state':'active','owner':'brand-ci'}))
+              out.write(f'{key}={value}\n')
+          PYTHON
+      - name: Fetch the public revision without credentials
+        env:
+          CI_REPOSITORY: ${{ github.repository }}
+          CI_REVISION: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          curl --disable --fail --location "https://codeload.github.com/$CI_REPOSITORY/tar.gz/$CI_REVISION" --output "$CI_ISOLATION_ROOT/source.tar.gz"
+          tar -xzf "$CI_ISOLATION_ROOT/source.tar.gz" --strip-components=1
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '24.13.1'
+          token: ''
+      - name: Verify fixed tool supply and install frozen dependencies
+        run: |
+          shasum -a 256 --check vendor/SHA256SUMS
+          npm ci
+      - name: Existing preflight and mandatory platform closure
+        run: npm run preflight
+      - name: Mutation checks
+        run: npm run test:mutation -- --run-dir "$CI_ISOLATION_ROOT/evidence"
+      - name: Remove isolated runtime directories
+        if: always()
+        run: |
+          if [ -n "${CI_ISOLATION_ROOT:-}" ]; then rm -rf -- "${CI_ISOLATION_ROOT:?}"; fi
