@@ -94,7 +94,7 @@ test('distribution declares client presentation, a profile bundle, and target pe
   assert.equal(pkg.peerDependencies['@deepseek-ai/dsh-client-ui-sidebar'], '0.2.1-alpha.2 || 0.2.1-rc.2');
   assert.ok(pkg.dsh.client.inject.includes('@deepseek-ai/dsh-client-locale'));
   assert.ok(pkg.dsh.client.inject.includes('@deepseek-ai/dsh-client-ui-theme'));
-  const client = await import('hanamesh-brand/client');
+  const client = await import('@hanamesh/brand/client');
   assert.deepEqual(client.inject, inject);
 });
 

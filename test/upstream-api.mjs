@@ -32,14 +32,14 @@ test('target profile composes the installed brand bundle and Loader activates it
   const dir = await mkdtemp(join(tmpdir(), 'hanamesh-brand-profile-'));
   const ctx = new Context();
   try {
-    await mkdir(join(dir, 'node_modules'));
-    await symlink(root, join(dir, 'node_modules/hanamesh-brand'), 'dir');
+    await mkdir(join(dir, 'node_modules/@hanamesh'), {recursive: true});
+    await symlink(root, join(dir, 'node_modules/@hanamesh/brand'), 'dir');
     await writeFile(join(dir, 'package.json'), JSON.stringify({private: true, type: 'module',
-      dsh: {profile: {bundles: ['@deepseek-ai/dsh-base', '@deepseek-ai/dsh-web-app', 'hanamesh-brand']}}}));
+      dsh: {profile: {bundles: ['@deepseek-ai/dsh-base', '@deepseek-ai/dsh-web-app', '@hanamesh/brand']}}}));
     const profile = loadProfileDirectory('brand-api', dir, join(upstream, 'apps/cli/package.json'), {userLayer: false});
     assert.deepEqual(profile.skippedBundles, []);
     const rows = composeEntries(profile.layers.map(layer => layer.patches));
-    const own = rows.filter(row => row.name === 'hanamesh-brand');
+    const own = rows.filter(row => row.name === '@hanamesh/brand');
     assert.equal(own.length, 1, 'exactly one own Host row, leaving official brand enabled');
     assert.equal(own[0].id, 'hanamesh-brand');
     assert.ok(rows.some(row => row.id === 'ui-brand-official' && !row.disabled));

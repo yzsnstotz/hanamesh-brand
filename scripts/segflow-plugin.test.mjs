@@ -108,7 +108,7 @@ test.before(async () => {
     assert.ok(candidate?.artifact, 'CLIENT_ASSEMBLY: normal release and verification artifacts required');
     candidate.installedPackageDir = await contained(candidate.installedPackageDir);
     const pkg = JSON.parse(await readFile(join(candidate.installedPackageDir, 'package.json'), 'utf8'));
-    assert.equal(pkg.name, 'hanamesh-brand'); assert.deepEqual(Object.keys(pkg.dsh), ['client']);
+    assert.equal(pkg.name, '@hanamesh/brand'); assert.deepEqual(Object.keys(pkg.dsh), ['client', 'bundle']);
     assert.equal(pkg.exports['./client'].default, './lib/client.js');
     assert.equal(pkg.exports['./client'].node, './lib/client/index.js');
     assert.equal(pkg.exports['./client'].types, './lib/client/index.d.ts');
@@ -228,7 +228,7 @@ async function loadedBytes(page, spec) {
     const graph = await page.evaluate(() => window.__DSH_BOOT__); // documented public boot graph; read only
     assert.ok(graph?.entries?.length && graph?.batches?.length, 'CLIENT_ASSEMBLY: actual boot graph absent');
     const candidate = spec.release ? inputs.release : inputs;
-    const packages = [['hanamesh-brand', candidate.installedPackageDir],
+    const packages = [['@hanamesh/brand', candidate.installedPackageDir],
       ...peers.map(peer => [peer, candidate.peerPackageDirs[peer]])];
     const sources = new Map();
     // Public combo transport replaces source-map trailers; executable bytes
