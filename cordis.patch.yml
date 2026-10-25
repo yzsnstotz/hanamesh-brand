@@ -2,4 +2,4 @@
 # Host activation only advertises the client package; it provides no service.
 - insert:
     - id: hanamesh-brand
-      name: hanamesh-brand
+      name: '@hanamesh/brand'

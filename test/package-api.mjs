@@ -37,9 +37,9 @@ try {
  await page.addScriptTag({url:origin+'/node_modules/@deepseek-ai/dsh-client-modules/lib/client.js'});
  const peers=['dsh-client-ui-renderer','dsh-client-ui-sidebar','dsh-client-ui-conversation','dsh-client-locale','dsh-client-ui-theme'];
  for(const name of peers)await page.addScriptTag({url:origin+'/node_modules/@deepseek-ai/'+name+'/lib/client.js'});
- const brand=JSON.parse(await readFile(resolve(root,'node_modules/hanamesh-brand/package.json'),'utf8'));
- await page.addScriptTag({url:origin+'/node_modules/hanamesh-brand/'+brand.exports['./client'].default});
- const registered=await page.evaluate(()=>window.apiQueue.some(row=>row.id==='hanamesh-brand'));
+ const brand=JSON.parse(await readFile(resolve(root,'node_modules/@hanamesh/brand/package.json'),'utf8'));
+ await page.addScriptTag({url:origin+'/node_modules/@hanamesh/brand/'+brand.exports['./client'].default});
+ const registered=await page.evaluate(()=>window.apiQueue.some(row=>row.id==='@hanamesh/brand'));
  console.log('brand bundle registered', registered, 'script errors',errors);
  assert.ok(registered,'published ./client must register an actual DSH client factory');
  const result=await page.evaluate(async()=>{
@@ -54,7 +54,7 @@ try {
   const providers=await Promise.all(providerNames.map(n=>modules.import('@deepseek-ai/'+n)));
   if(providers.some(p=>typeof p.apply!=='function'))throw Error('provider export mismatch');
   const [{SlotRegistry},,,{LocaleRuntime},{ThemeRuntime}]=providers;
-  const brand=await modules.import('hanamesh-brand');
+  const brand=await modules.import('@hanamesh/brand');
   const {Context}=window.apiSeeds['@deepseek-ai/cordis'];
   const ctx=new Context();await ctx.plugin(SlotRegistry).await();
   const locale=new LocaleRuntime(ctx);locale.setLocale('en');

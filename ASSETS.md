@@ -4,12 +4,12 @@
 
 |公开包路径|格式与尺寸|字节|SHA-256|
 |---|---|---:|---|
-|`hanamesh-brand/assets/favicon.svg`|`image/svg+xml`，512×512；内嵌 512×512 PNG|6256|`a502bc6cd5f95f32bbd2716a884f974f524e483c49b50798b0443adc7f232039`|
-|`hanamesh-brand/assets/welcome-brand.svg`|`image/svg+xml`，472×40；40×40 显示同一内嵌 PNG，并含 HanaMesh 文本|6430|`90d9fab4ffad1d7b1b5905b75eccce9836391cfd258a03162f74e81a805c3cf7`|
+|`@hanamesh/brand/assets/favicon.svg`|`image/svg+xml`，512×512；内嵌 512×512 PNG|6256|`a502bc6cd5f95f32bbd2716a884f974f524e483c49b50798b0443adc7f232039`|
+|`@hanamesh/brand/assets/welcome-brand.svg`|`image/svg+xml`，472×40；40×40 显示同一内嵌 PNG，并含 HanaMesh 文本|6430|`90d9fab4ffad1d7b1b5905b75eccce9836391cfd258a03162f74e81a805c3cf7`|
 
-`hanamesh-brand/assets/manifest.json` 给出精确字节数、SHA-256、SHA512 SRI、尺寸、源路径和许可状态。`hanamesh-brand/assets/source-license.txt` 保留原仓 LICENSE 原文；`hanamesh-brand/ASSETS.md` 可直接解析本页。所有路径均为显式 package exports，无需导入 Brand 运行模块，不依赖生产方 worktree。
+`@hanamesh/brand/assets/manifest.json` 给出精确字节数、SHA-256、SHA512 SRI、尺寸、源路径和许可状态。`@hanamesh/brand/assets/source-license.txt` 保留原仓 LICENSE 原文；`@hanamesh/brand/ASSETS.md` 可直接解析本页。所有路径均为显式 package exports，无需导入 Brand 运行模块，不依赖生产方 worktree。
 
-Node 消费方可用 `createRequire(import.meta.url).resolve('hanamesh-brand/assets/favicon.svg')` 定位后读取字节；SVG 由消费方作为静态资源处理，不能当作 JavaScript 导入。H 按自身已经批准的品牌清单选取静态输入并复核摘要。文件名 `favicon.svg` 本身不构成全局 favicon 或 OS 图标替换授权，也不扩大已有打包批准范围。
+Node 消费方可用 `createRequire(import.meta.url).resolve('@hanamesh/brand/assets/favicon.svg')` 定位后读取字节；SVG 由消费方作为静态资源处理，不能当作 JavaScript 导入。H 按自身已经批准的品牌清单选取静态输入并复核摘要。文件名 `favicon.svg` 本身不构成全局 favicon 或 OS 图标替换授权，也不扩大已有打包批准范围。
 
 两份文件逐字节取自 `https://github.com/yzsnstotz/hanamesh-desktop-electron.git` 的 `packaging/assets/`；文件最后修改提交为 `60efccc00c6a160bf9bddd0d137de14946a5e69a`，读取时干净 checkout 为 `ab3790222c543d9cabe9c9d8fa830f91aa57dc3d`。无变换、无新增标志、无外部资源 URL。欢迎图保留原有明暗媒体样式与 `sans-serif` 文本；字体由消费环境提供，本包未附加字体。
 

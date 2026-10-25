@@ -1,6 +1,10 @@
 > I25 / B04（2026-10-21）：主色范围按编排新决定收敛为插件局部；本文之前版本的全局主题覆盖验收是历史行为，本候选不再采用。基于 B06 候选保留局部兼容错误面。
 
-# hanamesh-brand
+# @hanamesh/brand
+
+## 0.1.3 候选
+
+只将 npm 包名和客户端模块键改为 `@hanamesh/brand`。Cordis id `hanamesh-brand`、品牌贡献、事件与字典保持，静态资产字节及摘要不变。独立发布经既有 0.1.9 平台门，不加入 DSH 套件三目标。
 
 ## 0.1.2 发布说明
 
@@ -35,19 +39,19 @@ PM 已将首页标题替换从本卡移至 `J1S2-DESK-02`，按 D-12 a 在打包
 
 ## Profile 安装与启用
 
-当前目标为 DSH/Desktop `0.2.1-alpha.2`、Cordis `4.0.5-alpha.1`。五个 DSH peer 精确对齐 `0.2.1-alpha.2`，React 保持 `18.3.1`。在隔离的目标 profile 用正常严格依赖安装品牌 tgz 后，将 `hanamesh-brand` 加在已有 Web bundle 层之后：
+当前目标为 DSH/Desktop `0.2.1-alpha.2`、Cordis `4.0.5-alpha.1`。五个 DSH peer 精确对齐 `0.2.1-alpha.2`，React 保持 `18.3.1`。在隔离的目标 profile 用正常严格依赖安装品牌 tgz 后，将 `@hanamesh/brand` 加在已有 Web bundle 层之后：
 
 ```json
 {
   "dsh": {
     "profile": {
-      "bundles": ["@deepseek-ai/dsh-base", "@deepseek-ai/dsh-web-app", "hanamesh-brand"]
+      "bundles": ["@deepseek-ai/dsh-base", "@deepseek-ai/dsh-web-app", "@hanamesh/brand"]
     }
   }
 }
 ```
 
-这是 profile 的 `package.json` 片段，合并到现有清单；保留其他 bundle 及依赖。包内 `dsh.bundle.patch` 指向 `./cordis.patch.yml`，只插入一条 `id/name: hanamesh-brand`。目标 `client-modules` 从活跃 Host Loader row 发现 `dsh.client`，因此根导出的空 metadata `apply()` 是必要的。无需关闭官方品牌插件或修改上游代码。
+这是 profile 的 `package.json` 片段，合并到现有清单；保留其他 bundle 及依赖。包内 `dsh.bundle.patch` 指向 `./cordis.patch.yml`，只插入一条 `id: hanamesh-brand`、`name: @hanamesh/brand`。目标 `client-modules` 从活跃 Host Loader row 发现 `dsh.client`，因此根导出的空 metadata `apply()` 是必要的。无需关闭官方品牌插件或修改上游代码。
 
 ## 验证与打包
 
@@ -110,7 +114,7 @@ npm run build
 
 ## 静态资产（B17 I1）
 
-H 使用的静态图形路径、格式、摘要、来源及许可未定项见 [ASSETS.md](ASSETS.md)，机器可读说明为公开 `hanamesh-brand/assets/manifest.json`。两份原始 SVG 随正常包交付，当前品牌槽组件与运行行为保持原样。
+H 使用的静态图形路径、格式、摘要、来源及许可未定项见 [ASSETS.md](ASSETS.md)，机器可读说明为公开 `@hanamesh/brand/assets/manifest.json`。两份原始 SVG 随正常包交付，当前品牌槽组件与运行行为保持原样。
 
 ## 发布检查：平台依赖闭包（不可关闭）
 
