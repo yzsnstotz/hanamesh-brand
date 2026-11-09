@@ -1,4 +1,10 @@
-# 当前兼容目标：DSH alpha.2 与官方 0.2.1-rc.2
+# 当前兼容范围：DSH 0.2.x（含 0.2.2-rc.1）
+
+0.1.4 按已发布 Core 0.3.33 / AppHost 0.6.24 / Usage 0.3.0-rc.18 统一声明：五项 DSH client peer 使用 `>=0.2.0-rc.2 <0.3.0-0 || >=0.2.1-0 <0.3.0-0 || >=0.2.2-0 <0.3.0-0`，Cordis 使用 `>=4.0.4 <4.2.0-0 || >=4.0.5-alpha.1 <4.2.0-0`，React `^18.3.1`，Node `>=24.13.1 <25`。这是兼容范围，不锁宿主精确版本。npm SemVer 对预发布按基础版本分别准入；该范围不自动准入未来 0.2.3 预发布，也拒绝 DSH 0.3 与 Cordis 4.2。
+
+冻结开发锁继续使用原 alpha SDK，真实 npm DSH 0.2.2-rc.1 宿主验证独立进行；宽 peer 不代替真实安装、加载或 GUI 验收。品牌源码、构建协议和资产字节不变。0.1.4 的两机命令、首错、真实加载及发布身份见本轮 BR1 交件，不把下列历史 PASS 当本轮结果。
+
+## 历史 alpha.2 / rc.2 证据
 
 2026-10-21 I27：先从原签名官方 macOS arm64 0.2.1-rc.2（源码687f282e8625c6b8d11ff58211a90524be2e4317）ASAR 公开 exports 取得实际模块字节，再以现有 B04 包运行公开 SlotRegistry、LocaleRuntime、ThemeRuntime、共享 React/Cordis 生命周期探针，通过后才增加版本声明。此为 PUBLIC_API_FIXTURE PRE_ADMISSION，正常包安装与真实官方 GUI 另验，不能互相替代。
 
