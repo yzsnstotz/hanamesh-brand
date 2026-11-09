@@ -91,7 +91,7 @@ test('distribution declares client presentation, a profile bundle, and target pe
   const {readFile} = await import('node:fs/promises');
   const pkg = JSON.parse(await readFile(new URL('../package.json', import.meta.url), 'utf8'));
   assert.deepEqual(Object.keys(pkg.dsh), ['client', 'bundle']);
-  assert.equal(pkg.peerDependencies['@deepseek-ai/dsh-client-ui-sidebar'], '0.2.1-alpha.2 || 0.2.1-rc.2');
+  assert.equal(pkg.peerDependencies['@deepseek-ai/dsh-client-ui-sidebar'], '>=0.2.0-rc.2 <0.3.0-0 || >=0.2.1-0 <0.3.0-0 || >=0.2.2-0 <0.3.0-0');
   assert.ok(pkg.dsh.client.inject.includes('@deepseek-ai/dsh-client-locale'));
   assert.ok(pkg.dsh.client.inject.includes('@deepseek-ai/dsh-client-ui-theme'));
   const client = await import('@hanamesh/brand/client');
