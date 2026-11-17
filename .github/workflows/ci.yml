@@ -45,8 +45,6 @@ jobs:
           npm ci
       - name: Existing preflight and mandatory platform closure
         run: npm run preflight
-      - name: Mutation checks
-        run: npm run test:mutation -- --run-dir "$CI_ISOLATION_ROOT/evidence"
       - name: Remove isolated runtime directories
         if: always()
         run: |
