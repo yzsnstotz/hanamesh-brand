@@ -134,3 +134,5 @@ H 使用的静态图形路径、格式、摘要、来源及许可未定项见 [A
 发布说明：DSH 内置 pnpm 11.7.0 处理不适用平台 optional 子包时可能安装后不退出，使 DSH 一直等安装结束；因此本门是正确性不变量（`disableable:false`），没有关闭开关。所有 OS/CPU/libc 都必须具备平台中立的完整安装依赖闭包，不能用本机已装、omit-optional、ignore-scripts、超时、重试、放宽断言或改客户端代替。每次 PASS/FAIL 的 JSON/receipt 都包含触发背景和不能关闭的 reason；release:check 正常 pack，release:publish 只发布同一已检查且再核 SHA 的 tar。源码目录发布由 prepublishOnly 拒绝，CI 的 verify:pack/preflight 必经该门；无可失败 job 或旁路入口。
 
 固定提供方 main 提交 `13ec0db3bc6aa6b6235f2105d3f0a6b998855ff5`，与 R2 审过的 0.1.9 正常包6载荷逐字一致；来源/归档摘要见 `vendor/release-platform-gate.json`。
+
+PKG1（2026-11-22）：`npm run verify:closure` 对正常 npm pack 的真实产物逐文件解析 JS/MJS/CJS 相对依赖，包外引用或缺文件即失败；发布入口与包验证入口执行此门。只解析，不执行包内代码。

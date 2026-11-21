@@ -47,9 +47,11 @@
     "prepack": "npm run build",
     "prepare": "npm run build",
     "test:upstream": "node test/upstream-api.mjs",
-    "release:check": "hanamesh-release check --lockfile package-lock.json",
-    "release:publish": "hanamesh-release publish --lockfile package-lock.json",
-    "prepublishOnly": "hanamesh-release source-guard"
+    "release:check": "npm run verify:closure && hanamesh-release check --lockfile package-lock.json",
+    "release:publish": "npm run verify:closure && hanamesh-release publish --lockfile package-lock.json",
+    "prepublishOnly": "npm run verify:closure && hanamesh-release source-guard",
+    "verify:closure": "node scripts/verify-pack-closure.mjs",
+    "verify:pack": "npm run verify:closure"
   },
   "dsh": {
     "client": {
