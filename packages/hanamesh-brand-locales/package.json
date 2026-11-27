@@ -1,0 +1,43 @@
+{
+  "name": "@hanamesh/brand-locales",
+  "version": "0.2.0",
+  "description": "Korean, Vietnamese and Indonesian language contributions for HanaMesh Desktop",
+  "type": "module",
+  "exports": {
+    ".": "./index.mjs",
+    "./client": "./lib/client.js",
+    "./cordis.patch.yml": "./cordis.patch.yml",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "index.mjs",
+    "lib/client.js",
+    "cordis.patch.yml",
+    "UPSTREAM-MIT.txt"
+  ],
+  "scripts": {
+    "prepack": "node ../../scripts/build-brand-locales.mjs"
+  },
+  "dsh": {
+    "client": {
+      "inject": ["@deepseek-ai/dsh-client-locale"],
+      "platform": "web",
+      "external": []
+    },
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
+  },
+  "peerDependencies": {
+    "@deepseek-ai/dsh-client-locale": ">=0.2.0-rc.2 <0.3.0-0 || >=0.2.1-0 <0.3.0-0 || >=0.2.2-0 <0.3.0-0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yzsnstotz/hanamesh-brand.git",
+    "directory": "packages/hanamesh-brand-locales"
+  },
+  "license": "MIT",
+  "engines": {
+    "node": ">=24.13.1 <25"
+  }
+}

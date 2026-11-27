@@ -45,3 +45,7 @@ D-79 开发验证驱动追加：playwright-core **1.56.0**，Apache-2.0，来源
 ## 静态品牌文件来源
 
 `assets/favicon.svg`、`assets/welcome-brand.svg` 原样来自 HanaMesh Desktop 的 `packaging/assets/`，精确来源提交和摘要见 [ASSETS.md](ASSETS.md) 与 `assets/manifest.json`。来源仓 MIT / DeepSeek LICENSE 原文保留在 `assets/source-license.txt`。资产本身及内嵌 PNG 未发现独立授权，许可状态为 unknown；本包 MIT 声明不推定图形授权或商标权。此项待编排确认，无新增字体或依赖。
+
+## HanaMesh Desktop language pack
+
+Brand's independent locale package adapts Korean, Vietnamese and Indonesian dictionaries from [dsh-locale-pack v0.9.2](https://github.com/sayho-pm/dsh-locale-pack/tree/37d953df8d0237fa2e0fa3be6b568681f5b5967f), copyright 2026 dsh-locale-pack contributors, under MIT. The published locale archive carries the upstream notice in `UPSTREAM-MIT.txt`.

@@ -1,6 +1,6 @@
 {
   "name": "@hanamesh/brand",
-  "version": "0.1.4",
+  "version": "0.2.0",
   "description": "HanaMesh client brand slot occupants",
   "type": "module",
   "exports": {
@@ -35,7 +35,7 @@
   "scripts": {
     "test": "node --experimental-strip-types --test test/*.test.mjs",
     "check": "tsc --noEmit",
-    "build": "tsc && node scripts/build-client.mjs",
+    "build": "tsc && node scripts/build-client.mjs && node scripts/build-brand-locales.mjs",
     "types": "npm run check",
     "test:contract": "npm run build && node --experimental-strip-types --test test/*.test.mjs",
     "toolchain": "node scripts/toolchain.mjs",
